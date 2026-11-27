@@ -1,0 +1,11 @@
+{
+  "name": "RWSCap — محرر الفيديو العربي",
+  "short_name": "RWSCap",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#141414",
+  "description": "محرر فيديو عربي تفاعلي للهواتف بواجهة CapCut المظلمة."
+}

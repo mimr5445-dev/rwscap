@@ -558,11 +558,16 @@ export function buildCssFilterString(filter: FilterState, adjustments: Adjustmen
   const c = 100 + adjustments.contrast + adjustments.sharpen * 0.22;
   const s = 100 + adjustments.saturation;
 
-  const parts: string[] = [
-    `brightness(${Math.max(20, b)}%)`,
-    `contrast(${Math.max(30, c)}%)`,
-    `saturate(${Math.max(0, s)}%)`,
-  ];
+  const isNeutralAdjustments = b === 100 && c === 100 && s === 100;
+  const isNeutralFilter = filter.id === 'original' || filter.intensity <= 0;
+  if (isNeutralAdjustments && isNeutralFilter) {
+    return 'none';
+  }
+
+  const parts: string[] = [];
+  if (b !== 100) parts.push(`brightness(${Math.max(20, b)}%)`);
+  if (c !== 100) parts.push(`contrast(${Math.max(30, c)}%)`);
+  if (s !== 100) parts.push(`saturate(${Math.max(0, s)}%)`);
 
   const k = filter.intensity / 100;
   switch (filter.id) {

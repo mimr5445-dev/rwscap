@@ -38,23 +38,44 @@ export const CoverModal: React.FC<CoverModalProps> = ({
     e.target.value = '';
   };
 
+  const titleId = React.useId();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   return (
     <div
       dir="rtl"
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
     >
-      <div className="w-full max-w-[360px] rounded-2xl bg-[#1E2023] border border-[#303338] overflow-hidden shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="w-full max-w-[360px] rounded-2xl bg-[#1E2023] border border-[#303338] overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#2C2E32]">
           <button
             type="button"
             onClick={onClose}
+            aria-label="إغلاق"
             className="p-1 text-[#A8A8A8] hover:text-white cursor-pointer"
           >
             <CloseIcon size={18} />
           </button>
-          <span className="text-[14px] font-semibold text-white">تعديل الغلاف</span>
+          <h2 id={titleId} className="text-[14px] font-semibold text-white text-balance">
+            تعديل الغلاف
+          </h2>
           <button
             type="button"
+            aria-label="حفظ الغلاف"
             onClick={() => {
               onSaveCover(time, customUrl);
               onClose();
