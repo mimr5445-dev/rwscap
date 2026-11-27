@@ -5,12 +5,14 @@ import { AlertDialog } from './AlertDialog';
 interface MediaAddModalProps {
   onImportFiles: (files: FileList) => void;
   onAddDemoClip: (variant: 'worldmap' | 'radar' | 'horizon') => void;
+  onAddDesertStationClip: () => void;
   onClose: () => void;
 }
 
 export const MediaAddModal: React.FC<MediaAddModalProps> = ({
   onImportFiles,
   onAddDemoClip,
+  onAddDesertStationClip,
   onClose,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,7 +78,17 @@ export const MediaAddModal: React.FC<MediaAddModalProps> = ({
         </button>
 
         <div className="pt-1">
-          <p className="text-[11.5px] text-[#8E8E8E] mb-2">أو إضافة مقطع تجريبي جاهز:</p>
+          <p className="text-[11.5px] text-[#8E8E8E] mb-2">أو إضافة مشهد جاهز للاستوديو:</p>
+          <button
+            type="button"
+            onClick={() => {
+              onAddDesertStationClip();
+              onClose();
+            }}
+            className="w-full py-2.5 px-3 mb-2 rounded-xl bg-[#1A353B] hover:bg-[#21434B] border border-[#00CAE0]/40 text-[12.5px] text-[#E6FAFC] font-semibold transition-colors cursor-pointer"
+          >
+            ⛽ مشهد محطة الصحراء التفاعلي (الاستوديو)
+          </button>
           <div className="grid grid-cols-3 gap-2">
             {(
               [

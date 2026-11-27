@@ -18,11 +18,13 @@ interface TimelineProps {
   isPlaying: boolean;
   selectedClipId: string | null;
   selectedLayerId: string | null;
+  selectedActorId: string | null;
   coverPreviewUrl: string;
   onSeek: (time: number) => void;
   onScrubStart: () => void;
   onSelectClip: (id: string | null) => void;
   onSelectLayer: (id: string | null) => void;
+  onSelectActor: (id: string | null) => void;
   onTrimClip: (clipId: string, edge: 'left' | 'right', deltaSeconds: number) => void;
   onOpenTransition: (clipId: string) => void;
   onToggleMuteMain: () => void;
@@ -30,6 +32,7 @@ interface TimelineProps {
   onAddMediaClick: () => void;
   onOpenAudio: () => void;
   onOpenText: () => void;
+  onOpenStudio: () => void;
   onDeleteAudio: (id: string) => void;
   onDeleteOverlay: (id: string) => void;
 }
@@ -41,11 +44,13 @@ export const Timeline: React.FC<TimelineProps> = ({
   isPlaying,
   selectedClipId,
   selectedLayerId,
+  selectedActorId,
   coverPreviewUrl,
   onSeek,
   onScrubStart,
   onSelectClip,
   onSelectLayer,
+  onSelectActor,
   onTrimClip,
   onOpenTransition,
   onToggleMuteMain,
@@ -53,6 +58,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   onAddMediaClick,
   onOpenAudio,
   onOpenText,
+  onOpenStudio,
   onDeleteAudio,
   onDeleteOverlay,
 }) => {
@@ -590,7 +596,83 @@ export const Timeline: React.FC<TimelineProps> = ({
             )}
           </div>
 
-          {/* ===== OPTIONAL ROW 4: OVERLAYS TRACK (only shown when overlays exist) ===== */}
+          {/* ===== OPTIONAL ROW 4: INTERACTIVE STUDIO ACTORS TRACK (with keyframe action diamonds) ===== */}
+          {(state.sceneActors?.length ?? 0) > 0 && (
+            <div className="space-y-1.5 mt-[9px]" style={{ width: `${totalTrackPx}px` }}>
+              {state.sceneActors!.map((actor) => {
+                const isSelected = selectedActorId === actor.id;
+                const startT = actor.keyframes[0]?.time ?? actor.appearTime;
+                const endT = Math.max(
+                  startT + 1.5,
+                  actor.keyframes[actor.keyframes.length - 1]?.time ?? totalDuration,
+                );
+                const stride = actor.keyframes.length > 16 ? Math.ceil(actor.keyframes.length / 12) : 1;
+                return (
+                  <div
+                    key={actor.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectActor(actor.id);
+                      onSelectClip(null);
+                      onSelectLayer(null);
+                    }}
+                    className={`relative h-[28px] rounded-[6px] border flex items-center cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-[#15363D] border-[#00CAE0]'
+                        : 'bg-[#25282D] border-white/10 hover:border-white/25'
+                    }`}
+                  >
+                    {/* Active motion range highlight bar */}
+                    <div
+                      style={{
+                        left: `${startT * pxPerSec}px`,
+                        width: `${Math.max(24, (endT - startT) * pxPerSec)}px`,
+                        backgroundColor: `${actor.primaryColor}38`,
+                      }}
+                      className="absolute top-0.5 bottom-0.5 rounded-[4px] pointer-events-none"
+                    />
+
+                    {/* Keyframe action diamonds along recorded timestamps */}
+                    {actor.keyframes.map((kf, idx) => {
+                      if (idx !== 0 && idx !== actor.keyframes.length - 1 && idx % stride !== 0) {
+                        return null;
+                      }
+                      return (
+                        <button
+                          key={`${kf.time}-${idx}`}
+                          type="button"
+                          title={kf.actionLabel || `${actor.name} (${formatTimecode(kf.time)})`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectActor(actor.id);
+                            onSeek(kf.time);
+                          }}
+                          style={{ left: `${kf.time * pxPerSec}px` }}
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[9px] h-[9px] rotate-45 bg-[#00CAE0] border border-[#0B181C] hover:scale-125 transition-transform cursor-pointer z-10"
+                          aria-label={`انتقال إلى إجراء ${actor.name} عند ${formatTimecode(kf.time)}`}
+                        />
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectActor(actor.id);
+                        onOpenStudio();
+                      }}
+                      dir="rtl"
+                      className="sticky left-2 z-20 px-2 py-0.5 rounded bg-[#141619]/90 text-[10px] text-[#E9F6F8] font-medium whitespace-nowrap cursor-pointer"
+                    >
+                      {actor.kind === 'car' ? '🚗' : '🚶'} {actor.name}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ===== OPTIONAL ROW 5: OVERLAYS TRACK (only shown when overlays exist) ===== */}
           {state.overlays.length > 0 && (
             <div className="relative h-[30px] mt-[8px]" style={{ width: `${totalTrackPx}px` }}>
               {state.overlays.map((ov) => (

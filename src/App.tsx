@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActiveTool,
+  CarModelId,
   ClipAnimation,
   ClipTransform,
   ClipTransition,
@@ -8,7 +9,9 @@ import {
   DEFAULT_CLIP_TRANSFORM,
   DEFAULT_EXPORT_SETTINGS,
   ExportSettings,
+  PersonModelId,
   ProjectState,
+  SceneActor,
   VideoClip,
 } from './types/editor';
 import {
@@ -33,13 +36,20 @@ import {
   trimClipEdge,
 } from './utils/timelineOps';
 import {
+  addActorTapWaypoint,
+  clearActorPath,
+  createActorFromVault,
+  DESERT_STATION_SCENE_URL,
+  recordActorKeyframe,
+} from './utils/sceneActors';
+import {
   clearProjectLocalStorage,
   deserializeProjectJson,
   loadProjectFromLocalStorage,
   saveProjectToLocalStorage,
   serializeProjectJson,
 } from './utils/projectStorage';
-import { clamp } from './utils/time';
+import { clamp, formatTimecode } from './utils/time';
 import { TopBar } from './components/TopBar';
 import { PreviewStage } from './components/PreviewStage';
 import { TransportBar } from './components/TransportBar';
@@ -58,36 +68,64 @@ import { SpeedPanel, VolumePanel } from './components/panels/ClipControlsPanel';
 import { TransitionPanel } from './components/panels/TransitionPanel';
 import { TransformPanel } from './components/panels/TransformPanel';
 import { AnimationPanel } from './components/panels/AnimationPanel';
+import { StudioPanel } from './components/panels/StudioPanel';
 import { ExportModal } from './components/modals/ExportModal';
 import { CoverModal } from './components/modals/CoverModal';
 import { SearchModal } from './components/modals/SearchModal';
 import { MediaAddModal, ProjectModal } from './components/modals/ProjectModal';
 
-function createInitialProject(): ProjectState {
-  const demoThumbs =
-    typeof document !== 'undefined' ? generateDemoThumbnails('worldmap', 9, 10) : [];
+function createDesertStationClip(id = 'clip-desert-station'): VideoClip {
   return {
-    clips: [
-      {
-        id: 'clip-initial-1',
-        type: 'demo',
-        name: 'خريطة العالم الرقمية',
-        sourceStart: 0,
-        duration: 9,
-        maxDuration: 18,
-        speed: 1,
-        volume: 100,
-        demoVariant: 'worldmap',
-        thumbnails: demoThumbs,
-      },
+    id,
+    type: 'image',
+    name: 'محطة الصحراء التفاعلية',
+    sourceStart: 0,
+    duration: 12,
+    maxDuration: 60,
+    speed: 1,
+    volume: 0,
+    srcUrl: DESERT_STATION_SCENE_URL,
+    thumbnails: [
+      DESERT_STATION_SCENE_URL,
+      DESERT_STATION_SCENE_URL,
+      DESERT_STATION_SCENE_URL,
+      DESERT_STATION_SCENE_URL,
+      DESERT_STATION_SCENE_URL,
+      DESERT_STATION_SCENE_URL,
     ],
+  };
+}
+
+function createInitialActors(): SceneActor[] {
+  let sedan = createActorFromVault('car', 'sedan', 0, { x: 14, y: 53 }, 'actor-car-initial', 0);
+  sedan = recordActorKeyframe(sedan, 1.8, 36, 63, { actionLabel: 'الانعطاف نحو المحطة' });
+  sedan = recordActorKeyframe(sedan, 3.8, 43, 52, { actionLabel: 'التوقف عند مضخة الوقود' });
+
+  let attendant = createActorFromVault(
+    'person',
+    'attendant',
+    0,
+    { x: 58, y: 47 },
+    'actor-person-initial',
+    0,
+  );
+  attendant = recordActorKeyframe(attendant, 2.2, 58, 47, { actionLabel: 'انتظار السيارة' });
+  attendant = recordActorKeyframe(attendant, 4.4, 49, 52, { actionLabel: 'التوجه لخدمة السائق' });
+
+  return [sedan, attendant];
+}
+
+function createInitialProject(): ProjectState {
+  return {
+    clips: [createDesertStationClip()],
     audioClips: [],
     textItems: [],
     stickers: [],
     overlays: [],
+    sceneActors: createInitialActors(),
     mutedMain: false,
     coverTime: 0.4,
-    aspectRatio: '16:9',
+    aspectRatio: '3:4',
     background: {
       mode: 'none',
       value: '#000000',
@@ -108,7 +146,6 @@ function hydrateInitialSession(): {
 } {
   const restored = loadProjectFromLocalStorage();
   if (restored) {
-    // Regenerate crisp demo thumbnails if any demo clip has empty thumbnails
     const hydratedClips = restored.project.clips.map((c) => {
       if (c.type === 'demo' && c.thumbnails.length === 0) {
         return {
@@ -119,7 +156,11 @@ function hydrateInitialSession(): {
       return c;
     });
     return {
-      project: { ...restored.project, clips: hydratedClips },
+      project: {
+        ...restored.project,
+        clips: hydratedClips,
+        sceneActors: restored.project.sceneActors ?? [],
+      },
       exportSettings: restored.exportSettings,
       savedAt: new Date(restored.savedAt).toLocaleTimeString('ar-EG', {
         hour: '2-digit',
@@ -154,6 +195,12 @@ export default function App() {
   const [transitionClipId, setTransitionClipId] = useState<string | null>(null);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
 
+  // Interactive Scene Studio state
+  const [selectedActorId, setSelectedActorId] = useState<string | null>(
+    () => initialSession.project.sceneActors?.[0]?.id ?? null,
+  );
+  const [isRecordingMotion, setIsRecordingMotion] = useState<boolean>(false);
+
   const [showExport, setShowExport] = useState(false);
   const [showCover, setShowCover] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -170,8 +217,22 @@ export default function App() {
   const playRafRef = useRef<number | null>(null);
   const lastFrameTsRef = useRef<number>(0);
   const autoSaveTimerRef = useRef<number | null>(null);
+  const previewUntilRef = useRef<number | null>(null);
+
+  // Live touch-drag real-time recording refs
+  const liveRecRef = useRef<{
+    active: boolean;
+    actorId: string;
+    x: number;
+    y: number;
+    time: number;
+    lastSampleTime: number;
+    lastFrameTs: number;
+    rafId: number | null;
+  } | null>(null);
 
   const totalDuration = useMemo(() => getTotalDuration(project.clips), [project.clips]);
+  const sceneActors = project.sceneActors ?? [];
 
   const registerObjectUrl = useCallback((url: string) => {
     if (url.startsWith('blob:')) createdObjectUrlsRef.current.add(url);
@@ -184,7 +245,6 @@ export default function App() {
     mediaCacheRef.current.images.clear();
   }, []);
 
-  // Revoke transient blob URLs on unmount to prevent memory leaks
   useEffect(() => revokeAllObjectUrls, [revokeAllObjectUrls]);
 
   // Debounced automatic persistence to localStorage (800ms)
@@ -205,7 +265,7 @@ export default function App() {
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = window.setTimeout(() => setToast(null), 2200);
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 2400);
   }, []);
 
   const lastCommitTsRef = useRef<number>(0);
@@ -249,7 +309,7 @@ export default function App() {
     });
   }, [project, showToast]);
 
-  // Playback animation loop
+  // Playback animation loop (supports both full playback and tap-to-go live arrival preview)
   useEffect(() => {
     if (!isPlaying) {
       if (playRafRef.current) cancelAnimationFrame(playRafRef.current);
@@ -257,7 +317,7 @@ export default function App() {
       return;
     }
 
-    if (!project.mutedMain) {
+    if (!project.mutedMain && previewUntilRef.current === null) {
       audioEngine.startPlayback(project.audioClips, currentTime);
     }
     lastFrameTsRef.current = performance.now();
@@ -267,7 +327,14 @@ export default function App() {
       lastFrameTsRef.current = now;
       setCurrentTime((prev) => {
         const next = prev + dt;
+        const stopTarget = previewUntilRef.current;
+        if (stopTarget !== null && next >= stopTarget) {
+          previewUntilRef.current = null;
+          setIsPlaying(false);
+          return stopTarget;
+        }
         if (next >= totalDuration) {
+          previewUntilRef.current = null;
           setIsPlaying(false);
           return 0;
         }
@@ -284,16 +351,269 @@ export default function App() {
     };
   }, [isPlaying, totalDuration, project.audioClips, project.mutedMain]);
 
-  // Pause looping playback when tab/window moves off-screen
+  // Pause playback & stop live recording when tab moves off-screen
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.hidden) {
+        previewUntilRef.current = null;
         setIsPlaying(false);
+        if (liveRecRef.current?.rafId) {
+          cancelAnimationFrame(liveRecRef.current.rafId);
+          liveRecRef.current = null;
+        }
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, []);
+
+  // ===== INTERACTIVE SCENE STUDIO HANDLERS =====
+  const handleSpawnActor = useCallback(
+    (kind: 'car' | 'person', modelId: CarModelId | PersonModelId) => {
+      previewUntilRef.current = null;
+      setIsPlaying(false);
+      const countOfKind = (project.sceneActors ?? []).filter((a) => a.kind === kind).length;
+      const newActor = createActorFromVault(
+        kind,
+        modelId,
+        currentTime,
+        undefined,
+        undefined,
+        countOfKind,
+      );
+      commit((prev) => ({
+        ...prev,
+        sceneActors: [...(prev.sceneActors ?? []), newActor],
+      }));
+      setSelectedActorId(newActor.id);
+      setSelectedClipId(null);
+      setSelectedLayerId(null);
+      showToast(`تمت إضافة «${newActor.name}» — المس الصورة لتحريكه`);
+    },
+    [project.sceneActors, currentTime, commit, showToast],
+  );
+
+  const handleTapSceneDestination = useCallback(
+    (actorId: string, targetX: number, targetY: number) => {
+      const targetActor = (project.sceneActors ?? []).find((a) => a.id === actorId);
+      if (!targetActor) return;
+
+      // Auto-extend scene duration by +5s if user directs an actor near the very end
+      let effectiveTotal = totalDuration;
+      const nearEnd = currentTime >= totalDuration - 0.5;
+      if (nearEnd) {
+        effectiveTotal = totalDuration + 5;
+      }
+
+      const result = addActorTapWaypoint(
+        targetActor,
+        currentTime,
+        targetX,
+        targetY,
+        effectiveTotal,
+      );
+
+      commit((prev) => {
+        const nextClips = nearEnd
+          ? prev.clips.map((c, idx) =>
+              idx === prev.clips.length - 1
+                ? {
+                    ...c,
+                    duration: Number((c.duration + 5).toFixed(2)),
+                    maxDuration: Math.max(c.maxDuration, c.duration + 5),
+                  }
+                : c,
+            )
+          : prev.clips;
+
+        return {
+          ...prev,
+          clips: nextClips,
+          sceneActors: (prev.sceneActors ?? []).map((a) =>
+            a.id === actorId ? result.actor : a,
+          ),
+        };
+      });
+
+      // Immediately play live to the tapped destination so the scene reacts in real time!
+      previewUntilRef.current = result.arrivalTime;
+      setIsPlaying(true);
+      showToast(
+        `تم تسجيل حركة «${targetActor.name}» إلى ${result.spotLabel} (${formatTimecode(currentTime)} → ${formatTimecode(result.arrivalTime)})`,
+      );
+    },
+    [project.sceneActors, currentTime, totalDuration, commit, showToast],
+  );
+
+  const handleMoveActorAtCurrentTime = useCallback(
+    (actorId: string, x: number, y: number) => {
+      previewUntilRef.current = null;
+      setIsPlaying(false);
+      commit(
+        (prev) => ({
+          ...prev,
+          sceneActors: (prev.sceneActors ?? []).map((a) =>
+            a.id === actorId ? recordActorKeyframe(a, currentTime, x, y) : a,
+          ),
+        }),
+        true,
+      );
+    },
+    [currentTime, commit],
+  );
+
+  const handleLiveDragStart = useCallback(
+    (actorId: string, x: number, y: number) => {
+      previewUntilRef.current = null;
+      setIsPlaying(false);
+
+      // Push single undo snapshot before streaming continuous live motion points
+      setPast((p) => [...p.slice(-39), project]);
+      setFuture([]);
+
+      const startT = currentTime >= totalDuration - 0.2 ? 0 : currentTime;
+      setCurrentTime(startT);
+
+      setProject((prev) => ({
+        ...prev,
+        sceneActors: (prev.sceneActors ?? []).map((a) =>
+          a.id === actorId
+            ? recordActorKeyframe(a, startT, x, y, {
+                truncateFuture: true,
+                actionLabel: 'بدء تسجيل الحركة بالمس',
+              })
+            : a,
+        ),
+      }));
+
+      const rec = {
+        active: true,
+        actorId,
+        x,
+        y,
+        time: startT,
+        lastSampleTime: startT,
+        lastFrameTs: performance.now(),
+        rafId: null as number | null,
+      };
+      liveRecRef.current = rec;
+
+      const step = (now: number) => {
+        const cur = liveRecRef.current;
+        if (!cur || !cur.active) return;
+        const dt = Math.min(0.08, (now - cur.lastFrameTs) / 1000);
+        cur.lastFrameTs = now;
+        cur.time = Math.min(totalDuration, cur.time + dt);
+        setCurrentTime(cur.time);
+
+        if (cur.time - cur.lastSampleTime >= 0.08 || cur.time >= totalDuration) {
+          cur.lastSampleTime = cur.time;
+          const sampleT = cur.time;
+          const sampleX = cur.x;
+          const sampleY = cur.y;
+          setProject((prev) => ({
+            ...prev,
+            sceneActors: (prev.sceneActors ?? []).map((a) =>
+              a.id === cur.actorId ? recordActorKeyframe(a, sampleT, sampleX, sampleY) : a,
+            ),
+          }));
+        }
+
+        if (cur.time >= totalDuration) {
+          cur.active = false;
+          liveRecRef.current = null;
+          showToast(`اكتمل تسجيل المسار حتى ${formatTimecode(totalDuration)}`);
+          return;
+        }
+        cur.rafId = requestAnimationFrame(step);
+      };
+
+      rec.rafId = requestAnimationFrame(step);
+    },
+    [project, currentTime, totalDuration, showToast],
+  );
+
+  const handleLiveDragMove = useCallback((actorId: string, x: number, y: number) => {
+    const cur = liveRecRef.current;
+    if (!cur || !cur.active || cur.actorId !== actorId) return;
+    cur.x = x;
+    cur.y = y;
+  }, []);
+
+  const handleLiveDragEnd = useCallback(() => {
+    const cur = liveRecRef.current;
+    if (!cur) return;
+    cur.active = false;
+    if (cur.rafId) cancelAnimationFrame(cur.rafId);
+    const finalT = cur.time;
+    const finalX = cur.x;
+    const finalY = cur.y;
+    const actorId = cur.actorId;
+    liveRecRef.current = null;
+
+    setProject((prev) => ({
+      ...prev,
+      sceneActors: (prev.sceneActors ?? []).map((a) =>
+        a.id === actorId
+          ? recordActorKeyframe(a, finalT, finalX, finalY, {
+              actionLabel: 'مسار مسجل بالمس',
+            })
+          : a,
+      ),
+    }));
+    showToast(`تم تسجيل الحركة في الوقت الفعلي حتى ${formatTimecode(finalT)}`);
+  }, [showToast]);
+
+  const handleUseDesertStationBackdrop = useCallback(() => {
+    commit((prev) => ({
+      ...prev,
+      aspectRatio: '3:4',
+      clips: [createDesertStationClip(`clip-desert-${Date.now()}`)],
+    }));
+    setCurrentTime(0);
+    showToast('تم تحميل مشهد محطة الصحراء التفاعلي');
+  }, [commit, showToast]);
+
+  const handleUploadSceneImage = useCallback(
+    (file: File) => {
+      const url = URL.createObjectURL(file);
+      registerObjectUrl(url);
+      const customClip: VideoClip = {
+        id: `scene-img-${Date.now()}`,
+        type: 'image',
+        name: file.name.replace(/\.[^.]+$/, ''),
+        sourceStart: 0,
+        duration: Math.max(12, totalDuration),
+        maxDuration: 60,
+        speed: 1,
+        volume: 0,
+        srcUrl: url,
+        thumbnails: [url, url, url, url, url],
+      };
+      commit((prev) => ({ ...prev, clips: [customClip] }));
+      showToast('تم تعيين صورة المشهد الجديدة');
+    },
+    [registerObjectUrl, totalDuration, commit, showToast],
+  );
+
+  const handleExtendDuration = useCallback(
+    (extraSec: number) => {
+      commit((prev) => ({
+        ...prev,
+        clips: prev.clips.map((c, idx) =>
+          idx === prev.clips.length - 1
+            ? {
+                ...c,
+                duration: Number((c.duration + extraSec).toFixed(2)),
+                maxDuration: Math.max(c.maxDuration, c.duration + extraSec),
+              }
+            : c,
+        ),
+      }));
+      showToast(`تم تمديد مدة المشهد +${extraSec} ثوانٍ`);
+    },
+    [commit, showToast],
+  );
 
   const handleSplitSelectedClip = useCallback(() => {
     const result = splitClipAtTime(project.clips, currentTime);
@@ -330,6 +650,7 @@ export default function App() {
         setFullscreen(false);
       } else if (e.code === 'Space') {
         e.preventDefault();
+        previewUntilRef.current = null;
         setIsPlaying((p) => !p);
       } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
@@ -337,10 +658,12 @@ export default function App() {
         else handleUndo();
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
+        previewUntilRef.current = null;
         setIsPlaying(false);
         setCurrentTime((t) => clamp(Number((t - 0.25).toFixed(2)), 0, totalDuration));
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
+        previewUntilRef.current = null;
         setIsPlaying(false);
         setCurrentTime((t) => clamp(Number((t + 0.25).toFixed(2)), 0, totalDuration));
       } else if (e.key.toLowerCase() === 's' && !e.metaKey && !e.ctrlKey) {
@@ -363,6 +686,14 @@ export default function App() {
           }));
           setSelectedLayerId(null);
           showToast('تم حذف الطبقة المحددة');
+        } else if (selectedActorId) {
+          e.preventDefault();
+          commit((prev) => ({
+            ...prev,
+            sceneActors: (prev.sceneActors ?? []).filter((a) => a.id !== selectedActorId),
+          }));
+          setSelectedActorId(null);
+          showToast('تم حذف العنصر من المشهد');
         } else if (selectedClipId) {
           e.preventDefault();
           handleDeleteClip();
@@ -381,6 +712,7 @@ export default function App() {
     project.mutedMain,
     showToast,
     selectedLayerId,
+    selectedActorId,
     selectedClipId,
     handleDeleteClip,
   ]);
@@ -388,6 +720,7 @@ export default function App() {
   // Cover thumbnail preview
   const coverPreviewUrl = useMemo(() => {
     if (project.customCoverUrl) return project.customCoverUrl;
+    if (project.clips[0]?.srcUrl) return project.clips[0].srcUrl;
     if (typeof document === 'undefined') return '';
     const canvas = document.createElement('canvas');
     canvas.width = 160;
@@ -406,6 +739,7 @@ export default function App() {
   }, [totalDuration, currentTime]);
 
   const handleTogglePlay = () => {
+    previewUntilRef.current = null;
     if (currentTime >= totalDuration - 0.05) {
       setCurrentTime(0);
     }
@@ -437,8 +771,8 @@ export default function App() {
           type: 'image',
           name: file.name.replace(/\.[^.]+$/, ''),
           sourceStart: 0,
-          duration: 4,
-          maxDuration: 30,
+          duration: 6,
+          maxDuration: 60,
           speed: 1,
           volume: 0,
           srcUrl: url,
@@ -498,14 +832,15 @@ export default function App() {
   };
 
   const handleFreezeFrame = () => {
+    previewUntilRef.current = null;
     setIsPlaying(false);
     const canvas = document.createElement('canvas');
-    canvas.width = 640;
-    canvas.height = 360;
+    canvas.width = 540;
+    canvas.height = 720;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    renderCompositeFrame(ctx, 640, 360, project, currentTime, mediaCacheRef.current);
-    const frameUrl = canvas.toDataURL('image/jpeg', 0.85);
+    renderCompositeFrame(ctx, 540, 720, project, currentTime, mediaCacheRef.current);
+    const frameUrl = canvas.toDataURL('image/jpeg', 0.78);
     const res = insertFreezeFrameAtTime(project.clips, currentTime, frameUrl);
     if (res.error) {
       showToast(res.error);
@@ -531,7 +866,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `RWSCap-project-${new Date().toISOString().slice(0, 10)}.rwscap.json`;
+    a.download = `RWSCap-studio-${new Date().toISOString().slice(0, 10)}.rwscap.json`;
     a.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     showToast('تم تنزيل ملف المشروع (.rwscap.json)');
@@ -548,11 +883,13 @@ export default function App() {
         ? { ...c, thumbnails: generateDemoThumbnails(c.demoVariant || 'worldmap', c.duration, 8) }
         : c,
     );
+    previewUntilRef.current = null;
     setIsPlaying(false);
     setCurrentTime(0);
     setSelectedClipId(null);
     setTransitionClipId(null);
     setSelectedLayerId(null);
+    setSelectedActorId(data.project.sceneActors?.[0]?.id ?? null);
     setActiveTool(null);
     commit(() => ({ ...data.project, clips: hydratedClips }));
     setExportSettings(data.exportSettings);
@@ -578,6 +915,7 @@ export default function App() {
           onChangeExportSettings={setExportSettings}
           totalDuration={totalDuration}
           onExportClick={() => {
+            previewUntilRef.current = null;
             setIsPlaying(false);
             setShowExport(true);
           }}
@@ -585,7 +923,7 @@ export default function App() {
           onCloseClick={() => setShowProjectMenu(true)}
         />
 
-        {/* 2. Live Video Preview Canvas */}
+        {/* 2. Live Interactive Scene Studio Canvas */}
         <PreviewStage
           state={project}
           currentTime={currentTime}
@@ -595,6 +933,7 @@ export default function App() {
           onExitFullscreen={() => setFullscreen(false)}
           onTogglePlay={handleTogglePlay}
           onSeek={(t) => {
+            previewUntilRef.current = null;
             setIsPlaying(false);
             setCurrentTime(t);
           }}
@@ -627,6 +966,33 @@ export default function App() {
             }));
             setSelectedLayerId(null);
           }}
+          selectedActorId={selectedActorId}
+          isRecordingMotion={isRecordingMotion}
+          onSelectActor={(id) => {
+            setSelectedActorId(id);
+            if (id) setSelectedClipId(null);
+          }}
+          onToggleRecordMotion={() => {
+            setIsRecordingMotion((v) => {
+              const next = !v;
+              showToast(
+                next
+                  ? 'وضع التسجيل المباشر مفعّل — اسحب السيارة أو الشخص على الصورة'
+                  : 'تم إيقاف التسجيل المباشر (اضغط التشغيل لمعاينة إجراءاتك)',
+              );
+              return next;
+            });
+          }}
+          onOpenStudioVault={() => {
+            previewUntilRef.current = null;
+            setIsPlaying(false);
+            setActiveTool('studio');
+          }}
+          onMoveActorAtCurrentTime={handleMoveActorAtCurrentTime}
+          onTapSceneDestination={handleTapSceneDestination}
+          onLiveDragStart={handleLiveDragStart}
+          onLiveDragMove={handleLiveDragMove}
+          onLiveDragEnd={handleLiveDragEnd}
         />
 
         {/* Subtle Floating Toast Feedback */}
@@ -635,7 +1001,7 @@ export default function App() {
             dir="rtl"
             role="status"
             aria-live="polite"
-            className="pointer-events-none absolute top-[62px] left-1/2 -translate-x-1/2 z-[60] px-3.5 py-1.5 rounded-full bg-black/80 border border-white/15 text-[12px] text-white font-medium shadow-lg whitespace-nowrap"
+            className="pointer-events-none absolute top-[62px] left-1/2 -translate-x-1/2 z-[60] px-3.5 py-1.5 rounded-full bg-black/85 border border-white/15 text-[11.5px] text-white font-medium shadow-lg max-w-[92%] truncate"
           >
             {toast}
           </div>
@@ -660,7 +1026,7 @@ export default function App() {
           onFullscreen={() => setFullscreen(true)}
         />
 
-        {/* 4. Interactive CapCut Timeline */}
+        {/* 4. Interactive CapCut Timeline with Studio Actors Track */}
         <Timeline
           state={project}
           currentTime={currentTime}
@@ -668,11 +1034,19 @@ export default function App() {
           isPlaying={isPlaying}
           selectedClipId={selectedClipId}
           selectedLayerId={selectedLayerId}
+          selectedActorId={selectedActorId}
           coverPreviewUrl={coverPreviewUrl}
-          onSeek={(t) => setCurrentTime(t)}
-          onScrubStart={() => setIsPlaying(false)}
+          onSeek={(t) => {
+            previewUntilRef.current = null;
+            setCurrentTime(t);
+          }}
+          onScrubStart={() => {
+            previewUntilRef.current = null;
+            setIsPlaying(false);
+          }}
           onSelectClip={(id) => {
             setSelectedClipId(id);
+            if (id) setSelectedActorId(null);
             if (
               !id &&
               (activeTool === 'speed' ||
@@ -684,8 +1058,13 @@ export default function App() {
             }
           }}
           onSelectLayer={setSelectedLayerId}
+          onSelectActor={(id) => {
+            setSelectedActorId(id);
+            if (id) setSelectedClipId(null);
+          }}
           onTrimClip={handleTrimClip}
           onOpenTransition={(clipId) => {
+            previewUntilRef.current = null;
             setIsPlaying(false);
             setTransitionClipId(clipId);
             setActiveTool('transition');
@@ -695,20 +1074,29 @@ export default function App() {
             showToast(project.mutedMain ? 'تم تشغيل صوت المقطع' : 'تم كتم صوت المقطع');
           }}
           onOpenCover={() => {
+            previewUntilRef.current = null;
             setIsPlaying(false);
             setShowCover(true);
           }}
           onAddMediaClick={() => {
+            previewUntilRef.current = null;
             setIsPlaying(false);
             setShowMediaAdd(true);
           }}
           onOpenAudio={() => {
+            previewUntilRef.current = null;
             setIsPlaying(false);
             setActiveTool('audio');
           }}
           onOpenText={() => {
+            previewUntilRef.current = null;
             setIsPlaying(false);
             setActiveTool('text');
+          }}
+          onOpenStudio={() => {
+            previewUntilRef.current = null;
+            setIsPlaying(false);
+            setActiveTool('studio');
           }}
           onDeleteAudio={(id) =>
             commit((prev) => ({
@@ -758,6 +1146,57 @@ export default function App() {
         />
 
         {/* ===== ACTIVE BOTTOM TOOL SHEETS ===== */}
+        {activeTool === 'studio' && (
+          <StudioPanel
+            actors={sceneActors}
+            selectedActorId={selectedActorId}
+            currentTime={currentTime}
+            totalDuration={totalDuration}
+            isRecordingMotion={isRecordingMotion}
+            onSelectActor={setSelectedActorId}
+            onSpawnCar={(modelId) => handleSpawnActor('car', modelId)}
+            onSpawnPerson={(modelId) => handleSpawnActor('person', modelId)}
+            onUpdateActor={(id, patch) =>
+              commit(
+                (prev) => ({
+                  ...prev,
+                  sceneActors: (prev.sceneActors ?? []).map((a) =>
+                    a.id === id ? { ...a, ...patch } : a,
+                  ),
+                }),
+                true,
+              )
+            }
+            onClearActorPath={(id) => {
+              commit((prev) => ({
+                ...prev,
+                sceneActors: (prev.sceneActors ?? []).map((a) =>
+                  a.id === id ? clearActorPath(a, currentTime) : a,
+                ),
+              }));
+              showToast('تم مسح مسار الحركة');
+            }}
+            onDeleteActor={(id) => {
+              commit((prev) => ({
+                ...prev,
+                sceneActors: (prev.sceneActors ?? []).filter((a) => a.id !== id),
+              }));
+              if (selectedActorId === id) setSelectedActorId(null);
+              showToast('تم حذف العنصر من المشهد');
+            }}
+            onToggleRecordMotion={() => setIsRecordingMotion((v) => !v)}
+            onJumpToTime={(t) => {
+              previewUntilRef.current = null;
+              setIsPlaying(false);
+              setCurrentTime(clamp(t, 0, totalDuration));
+            }}
+            onUseDesertStationBackdrop={handleUseDesertStationBackdrop}
+            onUploadSceneImage={handleUploadSceneImage}
+            onExtendDuration={handleExtendDuration}
+            onClose={() => setActiveTool(null)}
+          />
+        )}
+
         {activeTool === 'adjust' && (
           <AdjustPanel
             adjustments={project.adjustments}
@@ -1046,6 +1485,13 @@ export default function App() {
           <MediaAddModal
             onImportFiles={handleImportFiles}
             onAddDemoClip={handleAddDemoClip}
+            onAddDesertStationClip={() => {
+              commit((prev) => ({
+                ...prev,
+                clips: [...prev.clips, createDesertStationClip(`clip-desert-${Date.now()}`)],
+              }));
+              showToast('تمت إضافة مشهد محطة الصحراء');
+            }}
             onClose={() => setShowMediaAdd(false)}
           />
         )}
@@ -1068,7 +1514,9 @@ export default function App() {
             onResetProject={() => {
               revokeAllObjectUrls();
               clearProjectLocalStorage();
+              previewUntilRef.current = null;
               setIsPlaying(false);
+              setIsRecordingMotion(false);
               setCurrentTime(0);
               setSelectedClipId(null);
               setTransitionClipId(null);
@@ -1077,9 +1525,11 @@ export default function App() {
               setPast([]);
               setFuture([]);
               setLastSavedAt(null);
-              setProject(createInitialProject());
+              const fresh = createInitialProject();
+              setProject(fresh);
+              setSelectedActorId(fresh.sceneActors?.[0]?.id ?? null);
               setExportSettings(DEFAULT_EXPORT_SETTINGS);
-              showToast('تمت إعادة تعيين المشروع');
+              showToast('تمت إعادة تعيين مشهد الاستوديو الافتراضي');
             }}
             onAddMedia={() => setShowMediaAdd(true)}
             onClose={() => setShowProjectMenu(false)}

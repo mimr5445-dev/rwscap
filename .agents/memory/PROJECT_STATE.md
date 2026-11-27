@@ -6,8 +6,13 @@
 ## حقائق المشروع المؤكدة (Verified Facts)
 
 - **المنتج**: `RWSCap` — محرر فيديو عربي احترافي متجاوب للهواتف بواجهة CapCut المظلمة (React 19 + TypeScript 5.7 + Vite 6 + Tailwind CSS v4).
-- **الفرع النشط**: `arena/316aab97-rwscap` · طلب السحب المفتوح: **PR #2** (`https://github.com/mimr5445-dev/rwscap/pull/2`) بعد دمج PR #1 في `main`.
+- **الفرع النشط**: `arena/316aab97-rwscap` · طلب السحب المفتوح: **PR #3** (`https://github.com/mimr5445-dev/rwscap/pull/3`) بعد دمج PR #1 وPR #2 في `main`.
 - **خادم التطوير**: `npm run dev` يعمل على `0.0.0.0:5173` مع `server.allowedHosts: true` في `vite.config.ts` لدعم المعاينة المباشرة.
+- **استوديو المشاهد التفاعلي (Interactive Scene Studio)**:
+  - `public/scenes/desert-station.jpg`: صورة محطة الصحراء المرفقة (`736×981` بنسبة `3:4`) كخلفية مشهد الاستوديو الافتراضية.
+  - `src/utils/sceneActors.ts`: خزنة السيارات (6 مركبات) وخزنة الأشخاص (6 شخصيات)، محرك التقييم الزمني للحركة (`evaluateActorAtTime`)، التوجيه بالمس مع حساب زمن الوصول التلقائي (`addActorTapWaypoint`)، تسجيل المسار الحي (`recordActorKeyframe`)، وسجل الإجراءات الزمني (`buildActionTimelineLog`).
+  - `src/utils/actorRenderer.ts`: رسّام Canvas 2D متناغم مع أسلوب المحطة الصحراوية بظلال مطابقة لزاوية الإضاءة، التفاف تلقائي للسيارات، حركة مشي للأشخاص، ومسارات توجيه سماوية تختفي تلقائياً عند التصدير.
+  - `src/components/panels/StudioPanel.tsx`: واجهة خزنة السيارات والأشخاص وسجل الإجراءات المسجلة بالوقت وتبديل خلفية المشهد وتمديد المدة.
 - **معمارية الكود الاحترافية**:
   - `src/types/editor.ts`: نماذج البيانات الاحترافية (انتقالات المقاطع، التحويل المكاني، تحريك المقاطع وKen Burns، تحريك النصوص/الملصقات، تجميد الإطار، وتلاشي الصوت).
   - `src/utils/easing.ts`: منحنيات تخفيف مقيدة (`easeOutCubic`, `easeInOutCubic`, `easeOutBack`)، محرك حركة الطبقات (`typewriter`, `pop`, `slide-up`, `fade`)، حركة المقاطع (`ken-burns` وغيرها)، كشف نافذة الانتقالات، والمحاذاة المغناطيسية 50%.
@@ -18,7 +23,7 @@
   - `src/utils/exportVideo.ts`: مصدّر فيديو + صوت حقيقي عبر `Canvas.captureStream` + `Web Audio MediaStream` + `MediaRecorder` (.webm) مع تحرير تلقائي للذاكرة.
   - `src/components/panels/`: `TransitionPanel`, `TransformPanel`, `AnimationPanel`, `TextPanel` (مع تعديل فوري وتحريك), `StickersPanel` (مع تحريك), `AudioPanel` (مع تلاشي صوتي), بالإضافة إلى ألواح CapCut الأصلية.
 - **نظام المهارات المدمج**: 119 مهارة (`SKILL.md`) عبر 7 حزم + 12 قاعدة هندسية تحت `.agents/` مفهرسة في `.agents/skills/registry.json` ومخططها في `SKILLS_MASTER_PLAN.md`.
-- **الاختبارات والتحقق**: Vitest مُعدّ (`npm test`) بـ **31 اختباراً** للوحدات النقية + `npm run typecheck` + `npm run build`.
+- **الاختبارات والتحقق**: Vitest مُعدّ (`npm test`) بـ **38 اختباراً** للوحدات النقية + `npm run typecheck` + `npm run build`.
 
 ## حدود البيئة المعروفة (Environment Facts)
 

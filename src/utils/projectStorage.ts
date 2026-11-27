@@ -3,10 +3,11 @@ import {
   DEFAULT_EXPORT_SETTINGS,
   ExportSettings,
   ProjectState,
+  SceneActor,
   VideoClip,
 } from '../types/editor';
 
-export const AUTOSAVE_STORAGE_KEY = 'rwscap-project-v2';
+export const AUTOSAVE_STORAGE_KEY = 'rwscap-project-v3';
 
 export interface PersistedProjectEnvelope {
   schemaVersion: 2;
@@ -59,6 +60,7 @@ export function serializeProjectJson(
       ...o,
       srcUrl: stripTransientBlobUrl(o.srcUrl),
     })),
+    sceneActors: Array.isArray(project.sceneActors) ? project.sceneActors : [],
   };
 
   const envelope: PersistedProjectEnvelope = {
@@ -153,12 +155,51 @@ export function deserializeProjectJson(raw: string): {
       ? proj.filter.id
       : 'original';
 
+  const validActors: SceneActor[] = Array.isArray(proj.sceneActors)
+    ? proj.sceneActors
+        .slice(0, 30)
+        .filter(
+          (a): a is SceneActor =>
+            Boolean(
+              a &&
+                typeof a.id === 'string' &&
+                (a.kind === 'car' || a.kind === 'person') &&
+                Array.isArray(a.keyframes) &&
+                a.keyframes.length > 0,
+            ),
+        )
+        .map((a) => ({
+          ...a,
+          scale: Number.isFinite(a.scale) ? Math.min(1.8, Math.max(0.5, a.scale)) : 1,
+          speed: Number.isFinite(a.speed) ? Math.min(50, Math.max(3, a.speed)) : 14,
+          appearTime: Number.isFinite(a.appearTime) ? Math.max(0, a.appearTime) : 0,
+          keyframes: a.keyframes
+            .slice(0, 400)
+            .filter(
+              (k) =>
+                k &&
+                Number.isFinite(k.time) &&
+                Number.isFinite(k.x) &&
+                Number.isFinite(k.y),
+            )
+            .map((k) => ({
+              time: Math.max(0, Number(k.time)),
+              x: Math.min(100, Math.max(0, Number(k.x))),
+              y: Math.min(100, Math.max(0, Number(k.y))),
+              actionLabel: typeof k.actionLabel === 'string' ? k.actionLabel.slice(0, 60) : undefined,
+            }))
+            .sort((k1, k2) => k1.time - k2.time),
+        }))
+        .filter((a) => a.keyframes.length > 0)
+    : [];
+
   const hydratedProject: ProjectState = {
     clips: validClips,
     audioClips: Array.isArray(proj.audioClips) ? proj.audioClips.slice(0, 20) : [],
     textItems: Array.isArray(proj.textItems) ? proj.textItems.slice(0, 40) : [],
     stickers: Array.isArray(proj.stickers) ? proj.stickers.slice(0, 40) : [],
     overlays: Array.isArray(proj.overlays) ? proj.overlays.slice(0, 20) : [],
+    sceneActors: validActors,
     mutedMain: Boolean(proj.mutedMain),
     coverTime: typeof proj.coverTime === 'number' && Number.isFinite(proj.coverTime) ? Math.max(0, proj.coverTime) : 0.4,
     customCoverUrl: stripTransientBlobUrl(proj.customCoverUrl),
