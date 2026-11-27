@@ -16,7 +16,13 @@ import {
   renderCompositeFrame,
 } from './utils/demoRenderer';
 import { audioEngine } from './utils/audioSynth';
-import { clamp } from './utils/time';
+import {
+  changeClipSpeed,
+  deleteClipById,
+  duplicateClipById,
+  splitClipAtTime,
+  trimClipEdge,
+} from './utils/timelineOps';
 import { TopBar } from './components/TopBar';
 import { PreviewStage } from './components/PreviewStage';
 import { TransportBar } from './components/TransportBar';
@@ -187,12 +193,26 @@ export default function App() {
     };
   }, [isPlaying, totalDuration, project.audioClips]);
 
-  // Keyboard shortcuts (Space for play/pause, Ctrl+Z undo)
+  // Pause looping playback when tab/window moves off-screen (fixing-motion-performance + baseline-ui)
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        setIsPlaying(false);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, []);
+
+  // Keyboard shortcuts (Space for play/pause, Ctrl+Z undo, Escape exit fullscreen)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (e.code === 'Space') {
+      if (e.key === 'Escape' && fullscreen) {
+        e.preventDefault();
+        setFullscreen(false);
+      } else if (e.code === 'Space') {
         e.preventDefault();
         setIsPlaying((p) => !p);
       } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
@@ -203,7 +223,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleUndo, handleRedo]);
+  }, [handleUndo, handleRedo, fullscreen]);
 
   // Cover thumbnail preview
   const coverPreviewUrl = useMemo(() => {
@@ -301,91 +321,40 @@ export default function App() {
   };
 
   const handleSplitSelectedClip = () => {
-    const info = getActiveClipAtTime(project.clips, currentTime);
-    if (!info) return;
-    if (info.localTime < 0.35 || info.clip.duration - info.localTime < 0.35) {
-      showToast('حرّك مؤشر التشغيل داخل المقطع لتقسيمه');
+    const result = splitClipAtTime(project.clips, currentTime);
+    if (result.error) {
+      showToast(result.error);
       return;
     }
-
-    const firstDur = Number(info.localTime.toFixed(2));
-    const secondDur = Number((info.clip.duration - firstDur).toFixed(2));
-    const splitIndex = Math.max(
-      1,
-      Math.round((firstDur / info.clip.duration) * info.clip.thumbnails.length),
-    );
-
-    const firstHalf: VideoClip = {
-      ...info.clip,
-      id: `${info.clip.id}-a-${Date.now()}`,
-      duration: firstDur,
-      thumbnails: info.clip.thumbnails.slice(0, splitIndex),
-    };
-    const secondHalf: VideoClip = {
-      ...info.clip,
-      id: `${info.clip.id}-b-${Date.now()}`,
-      sourceStart: Number((info.clip.sourceStart + firstDur * info.clip.speed).toFixed(2)),
-      duration: secondDur,
-      thumbnails: info.clip.thumbnails.slice(splitIndex).length
-        ? info.clip.thumbnails.slice(splitIndex)
-        : info.clip.thumbnails,
-    };
-
-    commit((prev) => {
-      const nextClips = [...prev.clips];
-      nextClips.splice(info.clipIndex, 1, firstHalf, secondHalf);
-      return { ...prev, clips: nextClips };
-    });
-    setSelectedClipId(secondHalf.id);
+    commit((prev) => ({ ...prev, clips: result.clips }));
+    setSelectedClipId(result.newSelectedId);
     showToast('تم تقسيم المقطع');
   };
 
   const handleTrimClip = (clipId: string, edge: 'left' | 'right', deltaSeconds: number) => {
     setProject((prev) => ({
       ...prev,
-      clips: prev.clips.map((c) => {
-        if (c.id !== clipId) return c;
-        if (edge === 'right') {
-          const nextDur = clamp(c.duration + deltaSeconds, 0.5, c.maxDuration);
-          return { ...c, duration: Number(nextDur.toFixed(2)) };
-        } else {
-          const maxShift = c.duration - 0.5;
-          const shift = clamp(deltaSeconds, -c.sourceStart, maxShift);
-          return {
-            ...c,
-            sourceStart: Number(Math.max(0, c.sourceStart + shift).toFixed(2)),
-            duration: Number(Math.max(0.5, c.duration - shift).toFixed(2)),
-          };
-        }
-      }),
+      clips: trimClipEdge(prev.clips, clipId, edge, deltaSeconds),
     }));
   };
 
   const handleDuplicateClip = () => {
     if (!selectedClipId) return;
-    const idx = project.clips.findIndex((c) => c.id === selectedClipId);
-    if (idx === -1) return;
-    const orig = project.clips[idx];
-    const copy: VideoClip = { ...orig, id: `dup-${Date.now()}` };
-    commit((prev) => {
-      const arr = [...prev.clips];
-      arr.splice(idx + 1, 0, copy);
-      return { ...prev, clips: arr };
-    });
-    setSelectedClipId(copy.id);
+    const { clips: nextClips, newSelectedId } = duplicateClipById(project.clips, selectedClipId);
+    if (!newSelectedId) return;
+    commit((prev) => ({ ...prev, clips: nextClips }));
+    setSelectedClipId(newSelectedId);
     showToast('تم تكرار المقطع');
   };
 
   const handleDeleteClip = () => {
     if (!selectedClipId) return;
-    if (project.clips.length <= 1) {
-      showToast('يجب بقاء مقطع واحد على الأقل');
+    const result = deleteClipById(project.clips, selectedClipId);
+    if (result.error) {
+      showToast(result.error);
       return;
     }
-    commit((prev) => ({
-      ...prev,
-      clips: prev.clips.filter((c) => c.id !== selectedClipId),
-    }));
+    commit((prev) => ({ ...prev, clips: result.clips }));
     setSelectedClipId(null);
     setActiveTool(null);
     showToast('تم حذف المقطع');
@@ -461,7 +430,9 @@ export default function App() {
         {toast && (
           <div
             dir="rtl"
-            className="pointer-events-none absolute top-[62px] left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 rounded-full bg-black/80 border border-white/15 text-[12px] text-white font-medium shadow-lg whitespace-nowrap"
+            role="status"
+            aria-live="polite"
+            className="pointer-events-none absolute top-[62px] left-1/2 -translate-x-1/2 z-[60] px-3.5 py-1.5 rounded-full bg-black/80 border border-white/15 text-[12px] text-white font-medium shadow-lg whitespace-nowrap"
           >
             {toast}
           </div>
@@ -705,15 +676,7 @@ export default function App() {
             onChangeSpeed={(speed) =>
               commit((prev) => ({
                 ...prev,
-                clips: prev.clips.map((c) => {
-                  if (c.id !== selectedClip.id) return c;
-                  const ratio = c.speed / speed;
-                  return {
-                    ...c,
-                    speed,
-                    duration: Number(clamp(c.duration * ratio, 0.5, 60).toFixed(2)),
-                  };
-                }),
+                clips: changeClipSpeed(prev.clips, selectedClip.id, speed),
               }))
             }
             onClose={() => setActiveTool(null)}

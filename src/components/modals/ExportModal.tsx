@@ -42,19 +42,36 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     };
   }, [state, settings, mediaCache]);
 
-  const handleCancel = () => {
+  const titleId = React.useId();
+
+  const handleCancel = React.useCallback(() => {
     abortRef.current?.abort();
     onClose();
-  };
+  }, [onClose]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleCancel();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleCancel]);
 
   return (
     <div
       dir="rtl"
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
     >
-      <div className="w-full max-w-[360px] rounded-2xl bg-[#1E2023] border border-[#303338] p-5 text-center shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="w-full max-w-[360px] rounded-2xl bg-[#1E2023] border border-[#303338] p-5 text-center shadow-2xl"
+      >
         <div className="flex items-center justify-between mb-4">
-          <span className="text-[14px] font-semibold text-white">تصدير الفيديو</span>
+          <h2 id={titleId} className="text-[14px] font-semibold text-white text-balance">
+            تصدير الفيديو
+          </h2>
           <button
             type="button"
             onClick={handleCancel}

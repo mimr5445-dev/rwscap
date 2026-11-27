@@ -40,6 +40,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     ? ITEMS.filter((it) => it.label.toLowerCase().includes(q) || it.keywords.includes(q))
     : ITEMS;
 
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   return (
     <div
       dir="rtl"
@@ -47,6 +55,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="البحث عن أداة أو فلتر"
         className="w-full max-w-[380px] rounded-2xl bg-[#1E2023] border border-[#303338] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -57,12 +68,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            aria-label="ابحث عن أداة أو فلتر"
             placeholder="ابحث عن أداة أو فلتر..."
             className="flex-1 bg-transparent outline-none text-[13.5px] text-white placeholder:text-[#7A7A7A]"
           />
           <button
             type="button"
             onClick={onClose}
+            aria-label="إغلاق"
             className="p-1 text-[#9A9A9A] hover:text-white cursor-pointer"
           >
             <CloseIcon size={17} />

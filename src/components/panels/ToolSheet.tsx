@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useId } from 'react';
 import { CheckIcon, CloseIcon } from '../icons/CapCutIcons';
 
 interface ToolSheetProps {
@@ -14,10 +14,26 @@ export const ToolSheet: React.FC<ToolSheetProps> = ({
   onReset,
   children,
 }) => {
+  const titleId = useId();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   return (
     <div
       dir="rtl"
-      className="absolute inset-x-0 bottom-0 z-40 bg-[#1B1C1E] border-t border-[#2E3033] rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.65)] flex flex-col max-h-[54%]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      className="absolute inset-x-0 bottom-0 z-40 bg-[#1B1C1E] border-t border-[#2E3033] rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.65)] flex flex-col max-h-[54%] pb-[env(safe-area-inset-bottom)]"
     >
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2A2C2F] shrink-0">
@@ -31,7 +47,9 @@ export const ToolSheet: React.FC<ToolSheetProps> = ({
         </button>
 
         <div className="flex items-center gap-2.5">
-          <h2 className="text-[13.5px] font-semibold text-[#F0F0F0]">{title}</h2>
+          <h2 id={titleId} className="text-[13.5px] font-semibold text-[#F0F0F0] text-balance">
+            {title}
+          </h2>
           {onReset && (
             <button
               type="button"
