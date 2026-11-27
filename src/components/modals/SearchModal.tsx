@@ -22,8 +22,10 @@ const ITEMS: Array<{
   { label: 'الفلاتر', keywords: 'فلتر سينمائي ابيض واسود filter', action: 'tool', tool: 'filters' },
   { label: 'الشروحات', keywords: 'ترجمة شروحات نصوص تلقائية captions', action: 'tool', tool: 'captions' },
   { label: 'تراكب', keywords: 'تراكب صورة فوق صورة overlay pip', action: 'tool', tool: 'overlay' },
-  { label: 'إضافة نص', keywords: 'نص كتابة عنوان text', action: 'tool', tool: 'text' },
-  { label: 'إضافة صوت وموسيقى', keywords: 'صوت موسيقى اغنية audio', action: 'tool', tool: 'audio' },
+  { label: 'إضافة نص متحرك', keywords: 'نص كتابة عنوان حركة آلة كاتبة text', action: 'tool', tool: 'text' },
+  { label: 'تحويل المقطع (تدوير / قلب / تكبير)', keywords: 'تحويل تدوير عكس قلب تكبير شفافية transform rotate flip', action: 'tool', tool: 'transform' },
+  { label: 'تحريك المقطع (كين بيرنز)', keywords: 'تحريك حركة كين بيرنز تلاشي animation ken burns', action: 'tool', tool: 'animation' },
+  { label: 'إضافة صوت وموسيقى', keywords: 'صوت موسيقى اغنية تلاشي audio', action: 'tool', tool: 'audio' },
   { label: 'استيراد فيديو أو صورة', keywords: 'اضافة مقطع وسائط فيديو صورة import', action: 'media' },
   { label: 'تصدير الفيديو', keywords: 'حفظ تصدير تنزيل export', action: 'export' },
 ];

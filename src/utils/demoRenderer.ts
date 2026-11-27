@@ -2,14 +2,21 @@ import {
   Adjustments,
   AspectRatioId,
   BackgroundConfig,
+  DEFAULT_CLIP_TRANSFORM,
   FilterId,
   FilterState,
   OverlayItem,
   ProjectState,
   StickerItem,
   TextItem,
+  TransitionId,
   VideoClip,
 } from '../types/editor';
+import {
+  computeClipMotion,
+  computeLayerMotion,
+  computeTransitionWindow,
+} from './easing';
 
 export interface ActiveClipInfo {
   clip: VideoClip;
@@ -625,9 +632,11 @@ export function renderCompositeFrame(
   // 1. Background fill
   drawBackground(ctx, w, h, state.background, state, currentTime, mediaCache);
 
-  // 2. Main video / image / demo clip layer with CSS filter + temperature + vignette
+  // 2. Main video / image / demo clip layer with transitions, transforms, clip motion & filters
   const active = getActiveClipAtTime(state.clips, currentTime);
-  if (active) {
+  const activeTransition = computeTransitionWindow(state.clips, currentTime);
+
+  if (active || activeTransition) {
     ctx.save();
     ctx.filter = buildCssFilterString(state.filter, state.adjustments);
 
@@ -639,17 +648,46 @@ export function renderCompositeFrame(
     const offsetX = (w - drawW) / 2;
     const offsetY = (h - drawH) / 2;
 
+    ctx.save();
     if (hasBackdropFrame) {
-      ctx.save();
       roundRectPath(ctx, offsetX, offsetY, drawW, drawH, 10);
+      ctx.clip();
+    } else {
+      ctx.beginPath();
+      ctx.rect(offsetX, offsetY, drawW, drawH);
       ctx.clip();
     }
 
-    drawClipSource(ctx, active.clip, active.sourceTime, offsetX, offsetY, drawW, drawH, mediaCache);
-
-    if (hasBackdropFrame) {
-      ctx.restore();
+    if (activeTransition) {
+      renderTransitionBlend(
+        ctx,
+        activeTransition.transitionId,
+        activeTransition.eased,
+        activeTransition.fromClip,
+        activeTransition.fromSourceTime,
+        activeTransition.toClip,
+        activeTransition.toSourceTime,
+        offsetX,
+        offsetY,
+        drawW,
+        drawH,
+        mediaCache,
+      );
+    } else if (active) {
+      drawTransformedClip(
+        ctx,
+        active.clip,
+        active.sourceTime,
+        active.localTime,
+        offsetX,
+        offsetY,
+        drawW,
+        drawH,
+        mediaCache,
+      );
     }
+
+    ctx.restore();
     ctx.restore();
   }
 
@@ -680,21 +718,134 @@ export function renderCompositeFrame(
     }
   }
 
-  // 6. Stickers
+  // 6. Stickers (with clamped entrance/exit animations)
   for (const st of state.stickers) {
     if (currentTime >= st.startTime && currentTime <= st.startTime + st.duration) {
-      drawStickerItem(ctx, w, h, st);
+      drawStickerItem(ctx, w, h, st, currentTime - st.startTime);
     }
   }
 
-  // 7. Text & Captions
+  // 7. Text & Captions (with clamped entrance/exit + typewriter animations)
   for (const txt of state.textItems) {
     if (currentTime >= txt.startTime && currentTime <= txt.startTime + txt.duration) {
-      drawTextItem(ctx, w, h, txt);
+      drawTextItem(ctx, w, h, txt, currentTime - txt.startTime);
     }
   }
 
   ctx.restore();
+}
+
+function drawTransformedClip(
+  ctx: CanvasRenderingContext2D,
+  clip: VideoClip,
+  sourceTime: number,
+  localTime: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  mediaCache: MediaElementCache,
+) {
+  const tr = clip.transform ? { ...DEFAULT_CLIP_TRANSFORM, ...clip.transform } : DEFAULT_CLIP_TRANSFORM;
+  const motion = computeClipMotion(clip.animation, localTime, clip.duration);
+
+  const combinedOpacity = (tr.opacity / 100) * motion.opacity;
+  const combinedScale = tr.scale * motion.scale;
+  const tx = (tr.offsetX / 100) * w + motion.offsetX * w;
+  const ty = (tr.offsetY / 100) * h + motion.offsetY * h;
+  const rad = (tr.rotation * Math.PI) / 180;
+  const sx = (tr.flipH ? -1 : 1) * combinedScale;
+  const sy = (tr.flipV ? -1 : 1) * combinedScale;
+
+  ctx.save();
+  ctx.globalAlpha *= Math.max(0, Math.min(1, combinedOpacity));
+  ctx.translate(x + w / 2 + tx, y + h / 2 + ty);
+  if (rad !== 0) ctx.rotate(rad);
+  ctx.scale(sx, sy);
+  drawClipSource(ctx, clip, sourceTime, -w / 2, -h / 2, w, h, mediaCache);
+  ctx.restore();
+}
+
+function renderTransitionBlend(
+  ctx: CanvasRenderingContext2D,
+  transitionId: Exclude<TransitionId, 'none'>,
+  p: number,
+  fromClip: VideoClip,
+  fromSourceTime: number,
+  toClip: VideoClip,
+  toSourceTime: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  mediaCache: MediaElementCache,
+) {
+  switch (transitionId) {
+    case 'dissolve': {
+      ctx.save();
+      ctx.globalAlpha = 1 - p;
+      drawTransformedClip(ctx, fromClip, fromSourceTime, fromClip.duration, x, y, w, h, mediaCache);
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = p;
+      drawTransformedClip(ctx, toClip, toSourceTime, 0, x, y, w, h, mediaCache);
+      ctx.restore();
+      break;
+    }
+    case 'fade': {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x, y, w, h);
+      if (p < 0.5) {
+        ctx.save();
+        ctx.globalAlpha = 1 - p * 2;
+        drawTransformedClip(ctx, fromClip, fromSourceTime, fromClip.duration, x, y, w, h, mediaCache);
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.globalAlpha = (p - 0.5) * 2;
+        drawTransformedClip(ctx, toClip, toSourceTime, 0, x, y, w, h, mediaCache);
+        ctx.restore();
+      }
+      break;
+    }
+    case 'slide-left': {
+      drawTransformedClip(ctx, fromClip, fromSourceTime, fromClip.duration, x - p * w, y, w, h, mediaCache);
+      drawTransformedClip(ctx, toClip, toSourceTime, 0, x + (1 - p) * w, y, w, h, mediaCache);
+      break;
+    }
+    case 'slide-up': {
+      drawTransformedClip(ctx, fromClip, fromSourceTime, fromClip.duration, x, y - p * h, w, h, mediaCache);
+      drawTransformedClip(ctx, toClip, toSourceTime, 0, x, y + (1 - p) * h, w, h, mediaCache);
+      break;
+    }
+    case 'zoom-in': {
+      ctx.save();
+      ctx.globalAlpha = 1 - p;
+      ctx.translate(x + w / 2, y + h / 2);
+      ctx.scale(1 + p * 0.25, 1 + p * 0.25);
+      drawTransformedClip(ctx, fromClip, fromSourceTime, fromClip.duration, -w / 2, -h / 2, w, h, mediaCache);
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = p;
+      ctx.translate(x + w / 2, y + h / 2);
+      ctx.scale(0.85 + p * 0.15, 0.85 + p * 0.15);
+      drawTransformedClip(ctx, toClip, toSourceTime, 0, -w / 2, -h / 2, w, h, mediaCache);
+      ctx.restore();
+      break;
+    }
+    case 'wipe': {
+      drawTransformedClip(ctx, fromClip, fromSourceTime, fromClip.duration, x, y, w, h, mediaCache);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w * p, h);
+      ctx.clip();
+      drawTransformedClip(ctx, toClip, toSourceTime, 0, x, y, w, h, mediaCache);
+      ctx.restore();
+      break;
+    }
+  }
 }
 
 function drawBackground(
@@ -888,12 +1039,20 @@ function drawOverlayItem(
   ctx.restore();
 }
 
-function drawStickerItem(ctx: CanvasRenderingContext2D, w: number, h: number, st: StickerItem) {
+function drawStickerItem(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  st: StickerItem,
+  localTime: number,
+) {
+  const motion = computeLayerMotion(st.animation, localTime, st.duration);
   ctx.save();
-  const cx = (st.x / 100) * w;
-  const cy = (st.y / 100) * h;
-  const size = Math.round(54 * st.scale * (w / 960));
-  ctx.font = `${Math.max(24, size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.globalAlpha = Math.max(0, Math.min(1, motion.opacity));
+  const cx = (st.x / 100) * w + motion.offsetX * w;
+  const cy = (st.y / 100) * h + motion.offsetY * h;
+  const size = Math.round(54 * st.scale * motion.scale * (w / 960));
+  ctx.font = `${Math.max(18, size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(0,0,0,0.45)';
@@ -902,17 +1061,37 @@ function drawStickerItem(ctx: CanvasRenderingContext2D, w: number, h: number, st
   ctx.restore();
 }
 
-function drawTextItem(ctx: CanvasRenderingContext2D, w: number, h: number, item: TextItem) {
+function drawTextItem(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  item: TextItem,
+  localTime: number,
+) {
+  const motion = computeLayerMotion(item.animation, localTime, item.duration);
+  const chars = Array.from(item.text);
+  const visibleCount =
+    item.animation === 'typewriter'
+      ? Math.max(1, Math.round(chars.length * motion.visibleCharRatio))
+      : chars.length;
+  const visibleText = chars.slice(0, visibleCount).join('');
+
   ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, motion.opacity));
   const scale = w / 960;
   const fontSize = Math.max(16, Math.round(item.fontSize * scale * 1.45));
   ctx.font = `700 ${fontSize}px "IBM Plex Sans Arabic", Inter, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const cx = (item.x / 100) * w;
-  const cy = (item.y / 100) * h;
-  const metrics = ctx.measureText(item.text);
+  const cx = (item.x / 100) * w + motion.offsetX * w;
+  const cy = (item.y / 100) * h + motion.offsetY * h;
+  ctx.translate(cx, cy);
+  if (motion.scale !== 1) {
+    ctx.scale(motion.scale, motion.scale);
+  }
+
+  const metrics = ctx.measureText(visibleText);
   const padX = fontSize * 0.55;
   const padY = fontSize * 0.32;
   const boxW = metrics.width + padX * 2;
@@ -920,11 +1099,11 @@ function drawTextItem(ctx: CanvasRenderingContext2D, w: number, h: number, item:
 
   if (item.stylePreset === 'box' || item.bgColor !== 'transparent') {
     ctx.fillStyle = item.stylePreset === 'box' ? 'rgba(0, 0, 0, 0.72)' : item.bgColor;
-    roundRectPath(ctx, cx - boxW / 2, cy - boxH / 2, boxW, boxH, 10 * scale);
+    roundRectPath(ctx, -boxW / 2, -boxH / 2, boxW, boxH, 10 * scale);
     ctx.fill();
   } else if (item.stylePreset === 'cyan') {
     ctx.fillStyle = '#00CAE0';
-    roundRectPath(ctx, cx - boxW / 2, cy - boxH / 2, boxW, boxH, 10 * scale);
+    roundRectPath(ctx, -boxW / 2, -boxH / 2, boxW, boxH, 10 * scale);
     ctx.fill();
   }
 
@@ -932,7 +1111,7 @@ function drawTextItem(ctx: CanvasRenderingContext2D, w: number, h: number, item:
     ctx.lineWidth = Math.max(3, fontSize * 0.14);
     ctx.strokeStyle = '#000000';
     ctx.lineJoin = 'round';
-    ctx.strokeText(item.text, cx, cy);
+    ctx.strokeText(visibleText, 0, 0);
   } else {
     ctx.shadowColor = 'rgba(0,0,0,0.65)';
     ctx.shadowBlur = 8 * scale;
@@ -945,7 +1124,7 @@ function drawTextItem(ctx: CanvasRenderingContext2D, w: number, h: number, item:
       : item.stylePreset === 'gold'
         ? '#FFD447'
         : item.color || '#FFFFFF';
-  ctx.fillText(item.text, cx, cy);
+  ctx.fillText(visibleText, 0, 0);
   ctx.restore();
 }
 

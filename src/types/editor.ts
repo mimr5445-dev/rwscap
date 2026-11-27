@@ -13,6 +13,24 @@ export type FilterId =
   | 'bw'
   | 'cyber';
 
+export type TransitionId =
+  | 'none'
+  | 'fade'
+  | 'dissolve'
+  | 'slide-left'
+  | 'slide-up'
+  | 'zoom-in'
+  | 'wipe';
+
+export type ClipAnimationId =
+  | 'none'
+  | 'fade-in'
+  | 'zoom-in'
+  | 'slide-up'
+  | 'ken-burns';
+
+export type LayerAnimationId = 'none' | 'fade' | 'pop' | 'slide-up' | 'typewriter';
+
 export type ActiveTool =
   | null
   | 'background'
@@ -26,7 +44,30 @@ export type ActiveTool =
   | 'audio'
   | 'edit'
   | 'speed'
-  | 'volume';
+  | 'volume'
+  | 'transform'
+  | 'animation'
+  | 'transition';
+
+export interface ClipTransform {
+  rotation: number; // 0, 90, 180, 270
+  flipH: boolean;
+  flipV: boolean;
+  scale: number; // 0.5..2.0
+  opacity: number; // 0..100
+  offsetX: number; // -50..50 (% of canvas)
+  offsetY: number; // -50..50 (% of canvas)
+}
+
+export interface ClipTransition {
+  id: TransitionId;
+  duration: number; // 0.2..1.5 seconds
+}
+
+export interface ClipAnimation {
+  id: ClipAnimationId;
+  duration: number; // 0.3..2.0 seconds
+}
 
 export interface VideoClip {
   id: string;
@@ -43,6 +84,14 @@ export interface VideoClip {
   srcUrl?: string;
   demoVariant?: 'worldmap' | 'radar' | 'horizon';
   thumbnails: string[];
+  /** Optional frozen frame data URL (when clip is a freeze-frame snapshot) */
+  freezeFrameUrl?: string;
+  /** Spatial transform (rotation, flip, scale, opacity, pan) */
+  transform?: ClipTransform;
+  /** Transition applied INTO the next clip after this clip */
+  transitionOut?: ClipTransition;
+  /** Entrance / Ken Burns motion animation */
+  animation?: ClipAnimation;
 }
 
 export interface AudioClip {
@@ -51,6 +100,8 @@ export interface AudioClip {
   startTime: number;
   duration: number;
   volume: number; // 0..200
+  fadeIn?: number; // 0..3s
+  fadeOut?: number; // 0..3s
   sourceType: 'file' | 'synth';
   synthPreset?: 'cinematic' | 'ambient' | 'pulse' | 'lofi';
   srcUrl?: string;
@@ -68,6 +119,7 @@ export interface TextItem {
   color: string;
   bgColor: string;
   stylePreset: 'clean' | 'box' | 'cyan' | 'outline' | 'gold';
+  animation?: LayerAnimationId;
   isCaption?: boolean;
 }
 
@@ -81,6 +133,7 @@ export interface StickerItem {
   x: number;
   y: number;
   scale: number;
+  animation?: Exclude<LayerAnimationId, 'typewriter'>;
 }
 
 export interface OverlayItem {
@@ -137,6 +190,26 @@ export interface ProjectState {
   filter: FilterState;
   adjustments: Adjustments;
 }
+
+export const DEFAULT_CLIP_TRANSFORM: ClipTransform = {
+  rotation: 0,
+  flipH: false,
+  flipV: false,
+  scale: 1,
+  opacity: 100,
+  offsetX: 0,
+  offsetY: 0,
+};
+
+export const DEFAULT_CLIP_TRANSITION: ClipTransition = {
+  id: 'none',
+  duration: 0.6,
+};
+
+export const DEFAULT_CLIP_ANIMATION: ClipAnimation = {
+  id: 'none',
+  duration: 0.7,
+};
 
 export const DEFAULT_ADJUSTMENTS: Adjustments = {
   brightness: 0,

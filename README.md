@@ -1,8 +1,8 @@
-# RWSCap — محرر الفيديو العربي بواجهة CapCut
+# RWSCap — محرر الفيديو العربي الاحترافي بواجهة CapCut
 
-محرر فيديو عربي تفاعلي يعمل مباشرة في المتصفح بواجهة CapCut المظلمة للهواتف، يجمع بين خط زمني احترافي ومعاينة Canvas 2D وتصدير فيديو مباشر ومنظومة مهارات هندسية مدمجة (119 مهارة).
+محرر فيديو عربي احترافي يعمل مباشرة في المتصفح بواجهة CapCut المظلمة للهواتف، يجمع بين خط زمني متعدد المسارات، انتقالات سينمائية، تحويلات وحركات مقاطع (بما فيها Ken Burns)، دمج صوت وفيديو حقيقي عند التصدير، وحفظ تلقائي + تصدير/استيراد ملفات `.rwscap.json` مع منظومة مهارات هندسية مدمجة (119 مهارة).
 
-[التشغيل السريع](#quickstart) · [الميزات](#features) · [المعمارية](#architecture) · [منظومة المهارات](#skills) · [الأوامر](#scripts)
+[التشغيل السريع](#quickstart) · [الميزات الاحترافية](#features) · [اختصارات لوحة المفاتيح](#shortcuts) · [المعمارية](#architecture) · [منظومة المهارات](#skills) · [الأوامر](#scripts)
 
 ---
 
@@ -20,7 +20,7 @@ npm run dev
 
 يفتح التطبيق على `http://localhost:5173` (ويستمع على `0.0.0.0:5173` للمعاينة المباشرة وعلى الأجهزة ضمن الشبكة).
 
-للتحقق الكامل (اختبارات + فحص أنواع + بناء الإنتاج):
+للتحقق الكامل (31 اختباراً + فحص أنواع + بناء الإنتاج):
 
 ```bash
 npm test && npm run typecheck && npm run build
@@ -29,13 +29,30 @@ npm test && npm run typecheck && npm run build
 ---
 
 <a id="features"></a>
-## الميزات الرئيسية
+## الميزات الاحترافية
 
-- **واجهة CapCut عربية RTL متكاملة**: شريط علوي (`تصدير` + `▾ 540P` + بحث + إغلاق)، منصة معاينة حية، شريط تحكم (تشغيل/إيقاف، تراجع/إعادة، ربط المسارات `ON/OFF`، ملء الشاشة)، خط زمني تفاعلي بمؤشر مركزي أبيض، وشريط أدوات سفلي قابل للتمرير.
-- **تحرير متعدد الطبقات**: استيراد فيديو وصور من الجهاز أو مقاطع تجريبية، تقسيم، قص من الطرفين، تكرار، حذف، تحكم بالسرعة والصوت، كتم صوت المقطع، وتعديل الغلاف.
-- **مؤثرات بصرية وصوتية**: ضبط الألوان (السطوع، التباين، التشبع، التعريض، الحدة)، فلاتر جاهزة، أبعاد العرض (`16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `2.35:1`)، خلفية لونية أو مموّهة، نصوص وشروحات وملصقات قابلة للسحب، تراكب PIP، ومحرك Web Audio مدمج.
-- **تصدير مباشر من المتصفح**: تسجيل اللوحة عبر `Canvas.captureStream` + `MediaRecorder` بصيغة `.webm` مع بديل لقطة `PNG` عند عدم دعم التسجيل.
-- **إمكانية الوصول والأداء**: دعم `role="dialog"` و`AlertDialog` للإجراءات التدميرية، اختصارات لوحة المفاتيح (`Space`, `Ctrl+Z`, `Escape`)، احترام `prefers-reduced-motion`، وإيقاف التشغيل تلقائياً عند إخفاء التبويب.
+- **واجهة CapCut عربية RTL أصيلة**: شريط علوي (`تصدير` + `▾ 540P` + بحث + خيارات المشروع)، منصة معاينة حية، شريط تحكم، خط زمني تفاعلي بمؤشر مركزي أبيض وتكبير/تصغير (`−`/`+`)، وشريط أدوات سفلي متوافق مع التصميم المرجعي.
+- **انتقالات سينمائية بين المقاطع**: 6 انتقالات احترافية (`تلاشي ناعم`، `تلاشي أسود`، `انزلاق أفقي`، `انزلاق عمودي`، `تكبير سينمائي`، `مسح جانبي`) بمدة قابلة للضبط (`0.2s–1.5s`) مع خيار «تطبيق على جميع الانتقالات» عبر أزرار الالتقاء (`⇄`) في الخط الزمني.
+- **تحويل وتحريك المقاطع وتجميد الإطار**: تدوير 90°، عكس أفقي/عمودي، تكبير (`50%–200%`)، شفافية، إزاحة `X/Y`، حركات دخول و**Ken Burns** سينمائي، إدراج **إطار مجمّد** (`❄`) بضغطة واحدة، وإعادة ترتيب المقاطع (`تقديم/تأخير`).
+- **نصوص وملصقات متحركة ومحاذاة مغناطيسية**: تحريك النصوص والملصقات (`انبثاق`، `تلاشي`، `صعود`، `آلة كاتبة` متوافقة مع الحروف العربية)، تعديل فوري للنصوص الموجودة، وخطوط محاذاة مغناطيسية سماوية عند المنتصف (`50%`) أثناء السحب.
+- **صوت احترافي وتصدير فيديو+صوت مدمج**: تلاشي دخول/خروج صوتي (`fadeIn`/`fadeOut`) لكل مسار، مقياس مستوى صوتي حي، ودمج حقيقي لبث `Canvas` مع `Web Audio MediaStream` في ملف `.webm` (حتى دقة `2K/4K` و`60fps`).
+- **حفظ تلقائي ومشاريع محمولة**: حفظ تلقائي متواصل في `localStorage` مع تصدير واستيراد ملفات `.rwscap.json` محمية بالتحقق الصارم من المخطط والأمان، وإدارة دورة حياة `URL.revokeObjectURL` لمنع تسرب الذاكرة.
+
+---
+
+<a id="shortcuts"></a>
+## اختصارات لوحة المفاتيح
+
+| الاختصار | الوظيفة |
+|---|---|
+| `Space` | تشغيل / إيقاف مؤقت |
+| `←` / `→` | تحريك مؤشر التشغيل (±0.25 ثانية) |
+| `S` | تقسيم المقطع عند مؤشر التشغيل |
+| `M` | كتم / تفعيل الصوت |
+| `Ctrl/⌘ + Z` / `Ctrl/⌘ + Shift + Z` | تراجع / إعادة |
+| `Delete` / `Backspace` | حذف الطبقة أو المقطع المحدد |
+| `?` | فتح خيارات المشروع ودليل الاختصارات |
+| `Esc` | إغلاق اللوحة أو النافذة أو وضع ملء الشاشة |
 
 ---
 
@@ -44,20 +61,23 @@ npm test && npm run typecheck && npm run build
 
 ```mermaid
 flowchart LR
-    UI["واجهة React 19 RTL<br/>TopBar · Timeline · Panels"] --> State["حالة المشروع + Undo/Redo<br/>src/App.tsx"]
+    UI["واجهة React 19 RTL<br/>TopBar · PreviewStage · Timeline · Panels"] --> State["حالة المشروع + Undo/Redo<br/>src/App.tsx"]
     State --> Ops["عمليات الخط الزمني النقية<br/>src/utils/timelineOps.ts"]
-    State --> Canvas["محرك الرسم والفلاتر<br/>src/utils/demoRenderer.ts"]
-    State --> Audio["محرك Web Audio<br/>src/utils/audioSynth.ts"]
-    Canvas --> Export["مصدّر الفيديو WebM/PNG<br/>src/utils/exportVideo.ts"]
+    State --> Motion["محرك التخفيف والانتقالات<br/>src/utils/easing.ts"]
+    State --> Storage["الحفظ التلقائي و.rwscap.json<br/>src/utils/projectStorage.ts"]
+    Motion --> Canvas["محرك التركيب Canvas 2D<br/>src/utils/demoRenderer.ts"]
+    State --> Audio["محرك Web Audio + Fade<br/>src/utils/audioSynth.ts"]
+    Canvas --> Export["مصدّر الفيديو+الصوت WebM<br/>src/utils/exportVideo.ts"]
+    Audio --> Export
 ```
 
 <details>
 <summary>هيكل المجلدات والملفات الأساسية</summary>
 
-- `src/App.tsx` — إدارة حالة المشروع، التراجع/الإعادة، حلقة التشغيل، والألواح والنوافذ.
-- `src/types/editor.ts` — الأنواع والإعدادات الافتراضية للمشروع.
-- `src/utils/` — `timelineOps.ts`, `demoRenderer.ts`, `audioSynth.ts`, `exportVideo.ts`, `time.ts`, `cn.ts`, واختبارات `__tests__/editor.test.ts`.
-- `src/components/` — `TopBar`, `PreviewStage`, `TransportBar`, `Timeline`, `BottomToolbar`, `icons/CapCutIcons`, `panels/*`, `modals/*`.
+- `src/App.tsx` — إدارة حالة المشروع، التراجع/الإعادة، الحفظ التلقائي، اختصارات لوحة المفاتيح، وإدارة موارد Blob.
+- `src/types/editor.ts` — نماذج البيانات الكاملة للمقاطع، الانتقالات، التحويلات، الحركات، الصوت، والنصوص.
+- `src/utils/` — `easing.ts`, `timelineOps.ts`, `projectStorage.ts`, `demoRenderer.ts`, `audioSynth.ts`, `exportVideo.ts`, `time.ts`, `cn.ts`, وحزمتا اختبارات `__tests__/editor.test.ts` و`__tests__/proFeatures.test.ts`.
+- `src/components/` — `TopBar`, `PreviewStage`, `TransportBar`, `Timeline`, `BottomToolbar`, `icons/CapCutIcons`, الألواح الاحترافية (`TransitionPanel`, `TransformPanel`, `AnimationPanel`, `TextPanel`, `StickersPanel`, `AudioPanel`, `AdjustPanel`, `FilterPanel`, `AspectPanel`, `BackgroundPanel`, `CaptionsPanel`, `OverlayPanel`, `ClipControlsPanel`)، والنوافذ (`ExportModal`, `CoverModal`, `SearchModal`, `ProjectModal`, `AlertDialog`).
 - `DESIGN.md` — توثيق نظام التصميم، رموز الألوان، مقياس العمق، وقواعد RTL/LTR.
 - `AGENTS.md` & `SKILLS_MASTER_PLAN.md` — موجه الوكلاء والمخطط الكامل لمنظومة المهارات.
 - `.agents/` — 119 مهارة (`skills/`), 12 قاعدة هندسية (`rules/`), الفهرس الآلي (`skills/registry.json`), وذاكرة المشروع (`memory/`).
@@ -91,12 +111,12 @@ flowchart LR
 | الأمر | الوصف |
 |---|---|
 | `npm run dev` | تشغيل خادم التطوير على `0.0.0.0:5173` |
-| `npm test` | تشغيل حزمة اختبارات Vitest (`16` اختباراً) |
+| `npm test` | تشغيل حزمة اختبارات Vitest (`31` اختباراً) |
 | `npm run typecheck` | فحص TypeScript الصارم (`tsc --noEmit`) |
 | `npm run build` | فحص الأنواع وبناء نسخة الإنتاج في `dist/` |
 | `npm run preview` | معاينة نسخة الإنتاج محلياً على المنفذ `4173` |
 
 ## الحدود الحالية
 
-- التصدير يعتمد على دعم المتصفح لـ `MediaRecorder` (`video/webm`)؛ في المتصفحات غير الداعمة يسقط تلقائياً إلى تصدير صورة `PNG` للإطار الحالي.
-- المعاينة والتخزين محليان بالكامل داخل المتصفح (`localStorage` لحفظ بيانات المسودة) دون خادم خلفي.
+- التصدير يعتمد على دعم المتصفح لـ `MediaRecorder` (`video/webm` مع ترميز `vp9,opus` أو `vp8,opus`).
+- ملفات الوسائط المرفوعة محلياً (روابط `blob:`) تبقى مؤقتة في جلسة المتصفح وتُصفّى بأمان عند تصدير ملف `.rwscap.json` أو إعادة فتح المشروع لاحقاً.

@@ -1,4 +1,5 @@
 import { ExportSettings, ProjectState } from '../types/editor';
+import { audioEngine } from './audioSynth';
 import {
   getAspectDimensions,
   getTotalDuration,
@@ -10,22 +11,17 @@ export interface ExportResult {
   blobUrl: string;
   filename: string;
   sizeBytes: number;
-  mimeType: string;
+  durationSec: number;
+  hasAudio: boolean;
 }
 
-function getResolutionScale(res: ExportSettings['resolution']): number {
-  switch (res) {
-    case '480P':
-      return 0.75;
-    case '540P':
-      return 0.85;
-    case '720P':
-      return 1.0;
-    case '1080P':
-      return 1.35;
-    case '2K/4K':
-      return 1.65;
-  }
+function getExportSize(aspectRatio: ProjectState['aspectRatio'], resolution: ExportSettings['resolution']) {
+  const base = getAspectDimensions(aspectRatio);
+  const scale = resolution === '2K/4K' ? 2 : resolution === '1080P' ? 1.5 : 1;
+  return {
+    width: Math.round((base.width * scale) / 2) * 2,
+    height: Math.round((base.height * scale) / 2) * 2,
+  };
 }
 
 export async function exportProjectVideo(
@@ -35,90 +31,128 @@ export async function exportProjectVideo(
   onProgress: (percent: number) => void,
   signal?: AbortSignal,
 ): Promise<ExportResult> {
-  const base = getAspectDimensions(state.aspectRatio);
-  const scale = getResolutionScale(settings.resolution);
-  const width = Math.round((base.width * scale) / 2) * 2;
-  const height = Math.round((base.height * scale) / 2) * 2;
-  const totalDuration = getTotalDuration(state.clips);
+  if (typeof MediaRecorder === 'undefined') {
+    throw new Error('المتصفح الحالي لا يدعم تصدير الفيديو عبر MediaRecorder');
+  }
 
+  const { width, height } = getExportSize(state.aspectRatio, settings.resolution);
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    throw new Error('تعذر تهيئة محرك التصدير');
-  }
+  if (!ctx) throw new Error('تعذر تهيئة محرك الرسم للتصدير');
 
-  const supportsRecorder =
-    typeof MediaRecorder !== 'undefined' && typeof canvas.captureStream === 'function';
+  const totalDuration = getTotalDuration(state.clips);
+  const fps = settings.fps;
 
-  if (!supportsRecorder) {
-    renderCompositeFrame(ctx, width, height, state, 0, mediaCache);
-    onProgress(100);
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Export failed'))), 'image/png');
-    });
-    return {
-      blobUrl: URL.createObjectURL(blob),
-      filename: `rwscap-${settings.resolution.toLowerCase()}.png`,
-      sizeBytes: blob.size,
-      mimeType: 'image/png',
-    };
-  }
+  // Combine canvas video stream with live Web Audio stream when audio tracks are active
+  const videoStream = canvas.captureStream(fps);
+  const audioMux = audioEngine.createExportAudioStream(state.audioClips, state.mutedMain);
+  const hasAudio = Boolean(audioMux.stream && audioMux.stream.getAudioTracks().length > 0);
 
-  const fps = Math.min(30, settings.fps);
-  const stream = canvas.captureStream(fps);
-  const mimeCandidates = [
-    'video/webm;codecs=vp9',
-    'video/webm;codecs=vp8',
-    'video/webm',
-  ];
-  const mimeType = mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || 'video/webm';
-  const bps =
-    settings.bitrate === 'high' ? 6_000_000 : settings.bitrate === 'low' ? 1_800_000 : 3_500_000;
+  const combinedStream = new MediaStream([
+    ...videoStream.getVideoTracks(),
+    ...(audioMux.stream ? audioMux.stream.getAudioTracks() : []),
+  ]);
 
-  const recorder = new MediaRecorder(stream, {
-    mimeType,
-    videoBitsPerSecond: bps,
-  });
+  const preferredMimes = hasAudio
+    ? ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+    : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
 
-  const chunks: BlobPart[] = [];
-  recorder.ondataavailable = (e) => {
-    if (e.data && e.data.size > 0) chunks.push(e.data);
-  };
+  const mimeType = preferredMimes.find((m) => MediaRecorder.isTypeSupported(m)) || 'video/webm';
 
-  const finishedPromise = new Promise<Blob>((resolve, reject) => {
-    recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
-    recorder.onerror = () => reject(new Error('فشل التصدير'));
-  });
+  // Ensure image clips are decoded before recording
+  await Promise.all(
+    state.clips
+      .filter((c) => c.type === 'image' && c.srcUrl && !mediaCache.images.has(c.srcUrl))
+      .map(
+        (c) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              mediaCache.images.set(c.srcUrl!, img);
+              resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = c.srcUrl!;
+          }),
+      ),
+  );
 
-  recorder.start(100);
-
-  // Render faster-than-realtime safely while giving MediaRecorder frames
-  const frameStep = 1 / fps;
-  const totalFrames = Math.max(1, Math.ceil(totalDuration * fps));
-  // Cap wall-clock export render time nicely around ~3–5 seconds for smooth UX
-  const delayMs = Math.max(12, Math.min(32, Math.round(3600 / totalFrames)));
-
-  for (let frame = 0; frame <= totalFrames; frame++) {
-    if (signal?.aborted) {
-      recorder.stop();
-      throw new DOMException('Aborted', 'AbortError');
+  return new Promise<ExportResult>((resolve, reject) => {
+    const chunks: BlobPart[] = [];
+    let recorder: MediaRecorder;
+    try {
+      recorder = new MediaRecorder(combinedStream, {
+        mimeType,
+        videoBitsPerSecond:
+          settings.resolution === '2K/4K'
+            ? 12_000_000
+            : settings.resolution === '1080P'
+              ? 6_000_000
+              : 3_000_000,
+      });
+    } catch {
+      recorder = new MediaRecorder(combinedStream);
     }
-    const t = Math.min(totalDuration, frame * frameStep);
-    renderCompositeFrame(ctx, width, height, state, t, mediaCache);
-    onProgress(Math.min(99, Math.round((frame / totalFrames) * 100)));
-    await new Promise((r) => setTimeout(r, delayMs));
-  }
 
-  recorder.stop();
-  const blob = await finishedPromise;
-  onProgress(100);
+    const cleanupMedia = () => {
+      audioMux.stop();
+      videoStream.getTracks().forEach((t) => t.stop());
+    };
 
-  return {
-    blobUrl: URL.createObjectURL(blob),
-    filename: `rwscap-${settings.resolution.toLowerCase()}-${settings.fps}fps.webm`,
-    sizeBytes: blob.size,
-    mimeType,
-  };
+    recorder.ondataavailable = (ev) => {
+      if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+    };
+
+    recorder.onerror = () => {
+      cleanupMedia();
+      reject(new Error('حدث خطأ أثناء تسجيل الفيديو'));
+    };
+
+    recorder.onstop = () => {
+      cleanupMedia();
+      if (signal?.aborted) {
+        reject(new DOMException('تم إلغاء التصدير', 'AbortError'));
+        return;
+      }
+      const blob = new Blob(chunks, { type: mimeType });
+      const blobUrl = URL.createObjectURL(blob);
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      resolve({
+        blobUrl,
+        filename: `RWSCap-${settings.resolution}-${settings.fps}fps-${stamp}.webm`,
+        sizeBytes: blob.size,
+        durationSec: totalDuration,
+        hasAudio,
+      });
+    };
+
+    recorder.start(200);
+    const startWall = performance.now();
+
+    const step = (now: number) => {
+      if (signal?.aborted) {
+        if (recorder.state !== 'inactive') recorder.stop();
+        cleanupMedia();
+        return;
+      }
+
+      const elapsedSec = (now - startWall) / 1000;
+      const t = Math.min(totalDuration, elapsedSec);
+
+      renderCompositeFrame(ctx, width, height, state, t, mediaCache);
+      onProgress(Math.min(99, Math.round((t / totalDuration) * 100)));
+
+      if (elapsedSec >= totalDuration) {
+        onProgress(100);
+        if (recorder.state !== 'inactive') recorder.stop();
+        return;
+      }
+
+      requestAnimationFrame(step);
+    };
+
+    requestAnimationFrame(step);
+  });
 }
