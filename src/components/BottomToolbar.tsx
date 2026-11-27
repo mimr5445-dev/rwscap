@@ -24,11 +24,15 @@ interface BottomToolbarProps {
   hasFilter: boolean;
   hasAdjustments: boolean;
   hasBackground: boolean;
+  canMoveClipLeft: boolean;
+  canMoveClipRight: boolean;
   onSelectTool: (tool: ActiveTool) => void;
   onDeselectClip: () => void;
   onSplitClip: () => void;
   onDuplicateClip: () => void;
   onDeleteClip: () => void;
+  onFreezeFrame: () => void;
+  onReorderClip: (direction: -1 | 1) => void;
 }
 
 interface ToolDef {
@@ -45,13 +49,17 @@ export const BottomToolbar: React.FC<BottomToolbarProps> = ({
   hasFilter,
   hasAdjustments,
   hasBackground,
+  canMoveClipLeft,
+  canMoveClipRight,
   onSelectTool,
   onDeselectClip,
   onSplitClip,
   onDuplicateClip,
   onDeleteClip,
+  onFreezeFrame,
+  onReorderClip,
 }) => {
-  // Exact left-to-right physical order matching the CapCut Arabic screenshot
+  // Exact left-to-right physical order matching the CapCut Arabic screenshot (DESIGN.md invariant)
   const mainTools: ToolDef[] = [
     {
       id: 'background',
@@ -110,7 +118,7 @@ export const BottomToolbar: React.FC<BottomToolbarProps> = ({
   ];
 
   // Contextual Clip Edit Toolbar when a timeline video clip is selected
-  if (selectedClipId) {
+  if (selectedClipId && activeTool !== 'transition') {
     return (
       <nav
         aria-label="أدوات تعديل المقطع"
@@ -126,35 +134,62 @@ export const BottomToolbar: React.FC<BottomToolbarProps> = ({
           <ChevronRightIcon size={18} />
         </button>
 
-        <div className="flex items-center overflow-x-auto no-scrollbar flex-1 gap-1">
+        <div className="flex items-center overflow-x-auto no-scrollbar flex-1 gap-0.5">
           <ClipActionButton
             icon={<EditSplitIcon size={21} />}
             label="تقسيم"
             onClick={onSplitClip}
           />
           <ClipActionButton
+            icon={<AspectRatioIcon size={21} />}
+            label="تحويل"
+            active={activeTool === 'transform'}
+            onClick={() => onSelectTool(activeTool === 'transform' ? null : 'transform')}
+          />
+          <ClipActionButton
+            icon={<FiltersIcon size={21} />}
+            label="تحريك"
+            active={activeTool === 'animation'}
+            onClick={() => onSelectTool(activeTool === 'animation' ? null : 'animation')}
+          />
+          <ClipActionButton
             icon={<SpeedIcon size={21} />}
             label="السرعة"
             active={activeTool === 'speed'}
-            onClick={() => onSelectTool('speed')}
+            onClick={() => onSelectTool(activeTool === 'speed' ? null : 'speed')}
           />
           <ClipActionButton
             icon={<VolumeOnIcon size={21} />}
             label="الصوت"
             active={activeTool === 'volume'}
-            onClick={() => onSelectTool('volume')}
+            onClick={() => onSelectTool(activeTool === 'volume' ? null : 'volume')}
           />
           <ClipActionButton
-            icon={<FiltersIcon size={21} />}
-            label="الفلاتر"
-            active={activeTool === 'filters'}
-            onClick={() => onSelectTool('filters')}
+            icon={<span className="text-[18px] leading-none" aria-hidden="true">❄</span>}
+            label="تجميد"
+            onClick={onFreezeFrame}
           />
+          {(canMoveClipLeft || canMoveClipRight) && (
+            <>
+              <ClipActionButton
+                icon={<span className="text-[16px] leading-none" aria-hidden="true">←</span>}
+                label="تقديم"
+                disabled={!canMoveClipLeft}
+                onClick={() => onReorderClip(-1)}
+              />
+              <ClipActionButton
+                icon={<span className="text-[16px] leading-none" aria-hidden="true">→</span>}
+                label="تأخير"
+                disabled={!canMoveClipRight}
+                onClick={() => onReorderClip(1)}
+              />
+            </>
+          )}
           <ClipActionButton
             icon={<AdjustIcon size={21} />}
             label="ضبط"
             active={activeTool === 'adjust'}
-            onClick={() => onSelectTool('adjust')}
+            onClick={() => onSelectTool(activeTool === 'adjust' ? null : 'adjust')}
           />
           <ClipActionButton
             icon={<DuplicateIcon size={20} />}
@@ -226,6 +261,7 @@ interface ClipActionButtonProps {
   label: string;
   active?: boolean;
   danger?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }
 
@@ -234,12 +270,14 @@ const ClipActionButton: React.FC<ClipActionButtonProps> = ({
   label,
   active,
   danger,
+  disabled,
   onClick,
 }) => (
   <button
     type="button"
+    disabled={disabled}
     onClick={onClick}
-    className={`flex flex-col items-center justify-center min-w-[60px] py-1.5 rounded-lg active:scale-95 transition cursor-pointer ${
+    className={`flex flex-col items-center justify-center min-w-[56px] py-1.5 rounded-lg active:scale-95 transition cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed ${
       active
         ? 'text-[#00CAE0]'
         : danger

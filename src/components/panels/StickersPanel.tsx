@@ -1,5 +1,5 @@
-import React from 'react';
-import { StickerItem } from '../../types/editor';
+import React, { useState } from 'react';
+import { LayerAnimationId, StickerItem } from '../../types/editor';
 import { ToolSheet } from './ToolSheet';
 
 interface StickersPanelProps {
@@ -26,6 +26,15 @@ const STICKER_LIBRARY = [
   { stickerId: 'radar', glyph: '📡', label: 'إشارة' },
 ];
 
+type StickerAnimationId = Exclude<LayerAnimationId, 'typewriter'>;
+
+const STICKER_ANIMS: Array<{ id: StickerAnimationId; label: string }> = [
+  { id: 'pop', label: 'انبثاق' },
+  { id: 'fade', label: 'تلاشي' },
+  { id: 'slide-up', label: 'صعود' },
+  { id: 'none', label: 'ثابت' },
+];
+
 export const StickersPanel: React.FC<StickersPanelProps> = ({
   currentTime,
   totalDuration,
@@ -34,6 +43,8 @@ export const StickersPanel: React.FC<StickersPanelProps> = ({
   onDeleteSticker,
   onClose,
 }) => {
+  const [animation, setAnimation] = useState<StickerAnimationId>('pop');
+
   const handlePick = (entry: (typeof STICKER_LIBRARY)[number]) => {
     const start = Math.min(currentTime, Math.max(0, totalDuration - 1));
     const dur = Math.min(3.5, Math.max(1.2, totalDuration - start));
@@ -47,11 +58,30 @@ export const StickersPanel: React.FC<StickersPanelProps> = ({
       x: 50 + (Math.random() * 20 - 10),
       y: 45 + (Math.random() * 18 - 9),
       scale: 1,
+      animation,
     });
   };
 
   return (
     <ToolSheet title="ملصقات" onClose={onClose}>
+      <div className="flex items-center gap-1.5 mb-2.5 overflow-x-auto no-scrollbar">
+        <span className="text-[11px] text-[#8E8E8E] shrink-0 ml-1">حركة الملصق:</span>
+        {STICKER_ANIMS.map((an) => (
+          <button
+            key={an.id}
+            type="button"
+            onClick={() => setAnimation(an.id)}
+            className={`px-2.5 py-1 rounded-lg text-[11px] shrink-0 transition-colors cursor-pointer ${
+              animation === an.id
+                ? 'bg-[#00CAE0] text-[#09181C] font-semibold'
+                : 'bg-[#27292C] text-[#CCCCCC] hover:bg-[#323539]'
+            }`}
+          >
+            {an.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-6 gap-2 mb-3">
         {STICKER_LIBRARY.map((item) => (
           <button
@@ -69,7 +99,7 @@ export const StickersPanel: React.FC<StickersPanelProps> = ({
       {stickers.length > 0 && (
         <div className="pt-2.5 border-t border-[#2C2E31]">
           <p className="text-[11px] text-[#8E8E8E] mb-2">
-            الملصقات المضافة (اسحب الملصق على الشاشة لتغيير موقعه):
+            الملصقات المضافة (اسحب الملصق على الشاشة لتغيير موقعه مع المحاذاة المغناطيسية):
           </p>
           <div className="flex flex-wrap gap-1.5">
             {stickers.map((st) => (
@@ -82,6 +112,7 @@ export const StickersPanel: React.FC<StickersPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => onDeleteSticker(st.id)}
+                  aria-label={`حذف ${st.label}`}
                   className="text-white/60 hover:text-white cursor-pointer"
                 >
                   ✕

@@ -44,6 +44,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   const titleId = React.useId();
 
+  useEffect(() => {
+    return () => {
+      if (result?.blobUrl) {
+        URL.revokeObjectURL(result.blobUrl);
+      }
+    };
+  }, [result]);
+
   const handleCancel = React.useCallback(() => {
     abortRef.current?.abort();
     onClose();
@@ -102,6 +110,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <h3 className="text-[15px] font-bold text-white">تم التصدير بنجاح!</h3>
               <p className="text-[12px] text-[#9A9A9A] mt-1 tabular-nums" dir="ltr">
                 {settings.resolution} • {settings.fps} FPS • {(result.sizeBytes / (1024 * 1024)).toFixed(2)} MB
+              </p>
+              <p className="text-[11px] text-[#00CAE0] mt-1">
+                {result.hasAudio ? 'فيديو + مسار صوتي مدمج' : 'فيديو بدون مسار صوتي مضاف'}
               </p>
             </div>
             <div className="flex flex-col gap-2 pt-1">

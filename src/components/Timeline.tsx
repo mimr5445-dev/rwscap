@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { ProjectState } from '../types/editor';
+import { getAudioMeterLevel } from '../utils/audioSynth';
 import { clamp, formatTimecode } from '../utils/time';
 import {
   CoverEditIcon,
@@ -14,6 +15,7 @@ interface TimelineProps {
   state: ProjectState;
   currentTime: number;
   totalDuration: number;
+  isPlaying: boolean;
   selectedClipId: string | null;
   selectedLayerId: string | null;
   coverPreviewUrl: string;
@@ -22,6 +24,7 @@ interface TimelineProps {
   onSelectClip: (id: string | null) => void;
   onSelectLayer: (id: string | null) => void;
   onTrimClip: (clipId: string, edge: 'left' | 'right', deltaSeconds: number) => void;
+  onOpenTransition: (clipId: string) => void;
   onToggleMuteMain: () => void;
   onOpenCover: () => void;
   onAddMediaClick: () => void;
@@ -35,6 +38,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   state,
   currentTime,
   totalDuration,
+  isPlaying,
   selectedClipId,
   selectedLayerId,
   coverPreviewUrl,
@@ -43,6 +47,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   onSelectClip,
   onSelectLayer,
   onTrimClip,
+  onOpenTransition,
   onToggleMuteMain,
   onOpenCover,
   onAddMediaClick,
@@ -141,6 +146,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   const totalTrackPx = Math.max(260, totalDuration * pxPerSec);
 
   const hasTextOrStickers = state.textItems.length > 0 || state.stickers.length > 0;
+  const audioLevel = getAudioMeterLevel(state.audioClips, currentTime, state.mutedMain, isPlaying);
 
   return (
     <section
@@ -154,11 +160,52 @@ export const Timeline: React.FC<TimelineProps> = ({
       className="relative h-[37%] min-h-[240px] max-h-[330px] bg-[#1C1C1C] flex flex-col overflow-hidden shrink-0 touch-none select-none"
     >
       {/* Top Timecode & Ruler Row */}
-      <div className="relative h-[34px] flex items-center shrink-0 overflow-hidden">
+      <div className="relative h-[34px] flex items-center justify-between shrink-0 overflow-hidden">
         {/* Left pinned current / total timecode (clean CapCut tabular style) */}
         <div className="relative z-20 h-full flex items-center pl-3.5 pr-4 bg-gradient-to-r from-[#1C1C1C] via-[#1C1C1C] to-transparent text-[11.5px] tabular-nums">
           <span className="text-white font-medium">{formatTimecode(currentTime)}</span>
           <span className="text-[#888888] ml-1">/ {formatTimecode(totalDuration)}</span>
+        </div>
+
+        {/* Compact Timeline Zoom Controls on right corner */}
+        <div className="relative z-20 h-full flex items-center gap-1 pr-2.5 pl-4 bg-gradient-to-l from-[#1C1C1C] via-[#1C1C1C] to-transparent">
+          {audioLevel > 0.04 && (
+            <div
+              aria-hidden="true"
+              className="flex items-end gap-[1.5px] h-3 mr-1.5"
+              title="مستوى الصوت"
+            >
+              {[0.4, 0.75, 1, 0.6].map((mult, idx) => (
+                <span
+                  key={idx}
+                  style={{ height: `${Math.max(20, Math.round(audioLevel * mult * 100))}%` }}
+                  className="w-[2px] rounded-full bg-[#00CAE0] transition-all duration-75"
+                />
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPxPerSec((p) => clamp(p - 12, 32, 110));
+            }}
+            aria-label="تصغير المخطط الزمني"
+            className="w-5 h-5 rounded bg-[#262626] hover:bg-[#333333] text-[#9A9A9A] hover:text-white text-[12px] leading-none flex items-center justify-center cursor-pointer"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPxPerSec((p) => clamp(p + 12, 32, 110));
+            }}
+            aria-label="تكبير المخطط الزمني"
+            className="w-5 h-5 rounded bg-[#262626] hover:bg-[#333333] text-[#9A9A9A] hover:text-white text-[12px] leading-none flex items-center justify-center cursor-pointer"
+          >
+            +
+          </button>
         </div>
 
         {/* Dynamic Ruler ticks synchronized with center playhead */}
@@ -294,78 +341,122 @@ export const Timeline: React.FC<TimelineProps> = ({
           </div>
 
           {/* ===== ROW 1: MAIN VIDEO FILMSTRIP TRACK (t >= 0) ===== */}
-          <div className="flex items-center h-[54px]" style={{ width: `${totalTrackPx}px` }}>
-            {state.clips.map((clip) => {
+          <div className="relative flex items-center h-[54px]" style={{ width: `${totalTrackPx}px` }}>
+            {state.clips.map((clip, clipIdx) => {
               const clipWidth = Math.max(28, clip.duration * pxPerSec);
               const isSelected = selectedClipId === clip.id;
               const thumbCount = Math.max(1, Math.ceil(clipWidth / 52));
+              const hasActiveTransition = Boolean(clip.transitionOut && clip.transitionOut.id !== 'none');
+              const hasMotionOrTransform = Boolean(
+                (clip.animation && clip.animation.id !== 'none') ||
+                  (clip.transform &&
+                    (clip.transform.rotation !== 0 ||
+                      clip.transform.flipH ||
+                      clip.transform.flipV ||
+                      clip.transform.scale !== 1 ||
+                      clip.transform.opacity !== 100)),
+              );
+
               return (
-                <div
-                  key={clip.id}
-                  style={{ width: `${clipWidth}px` }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectClip(isSelected ? null : clip.id);
-                    onSelectLayer(null);
-                  }}
-                  className={`relative h-[52px] shrink-0 overflow-hidden cursor-pointer transition-shadow ${
-                    isSelected
-                      ? 'rounded-[6px] ring-2 ring-white z-20'
-                      : 'rounded-[4px] border-r border-[#141414]'
-                  }`}
-                >
-                  {/* Filmstrip frame images */}
-                  <div className="flex w-full h-full bg-[#24282C]">
-                    {Array.from({ length: thumbCount }).map((_, idx) => {
-                      const src =
-                        clip.thumbnails.length > 0
-                          ? clip.thumbnails[
-                              Math.min(
-                                clip.thumbnails.length - 1,
-                                Math.floor((idx / thumbCount) * clip.thumbnails.length),
-                              )
-                            ]
-                          : '';
-                      return (
-                        <div key={idx} className="flex-1 h-full overflow-hidden min-w-0">
-                          {src ? (
-                            <img
-                              src={src}
-                              alt=""
-                              className="w-full h-full object-cover block"
-                              draggable={false}
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-[#2B3137]" />
-                          )}
+                <div key={clip.id} className="relative flex items-center shrink-0">
+                  <div
+                    style={{ width: `${clipWidth}px` }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectClip(isSelected ? null : clip.id);
+                      onSelectLayer(null);
+                    }}
+                    className={`relative h-[52px] shrink-0 overflow-hidden cursor-pointer transition-shadow ${
+                      isSelected
+                        ? 'rounded-[6px] ring-2 ring-white z-20'
+                        : 'rounded-[4px] border-r border-[#141414]'
+                    }`}
+                  >
+                    {/* Filmstrip frame images */}
+                    <div className="flex w-full h-full bg-[#24282C]">
+                      {Array.from({ length: thumbCount }).map((_, idx) => {
+                        const src =
+                          clip.thumbnails.length > 0
+                            ? clip.thumbnails[
+                                Math.min(
+                                  clip.thumbnails.length - 1,
+                                  Math.floor((idx / thumbCount) * clip.thumbnails.length),
+                                )
+                              ]
+                            : '';
+                        return (
+                          <div key={idx} className="flex-1 h-full overflow-hidden min-w-0">
+                            {src ? (
+                              <img
+                                src={src}
+                                alt=""
+                                className="w-full h-full object-cover block"
+                                draggable={false}
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#2B3137]" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Speed / Motion badges */}
+                    <div className="absolute bottom-1 left-1.5 flex items-center gap-1 pointer-events-none">
+                      {clip.speed !== 1 && (
+                        <span className="px-1 py-0.5 rounded bg-black/75 text-[9px] text-[#00CAE0] font-semibold tabular-nums">
+                          {clip.speed}x
+                        </span>
+                      )}
+                      {hasMotionOrTransform && (
+                        <span className="px-1 py-0.5 rounded bg-black/75 text-[9px] text-[#FFD447] font-semibold">
+                          FX
+                        </span>
+                      )}
+                      {clip.freezeFrameUrl && (
+                        <span className="px-1 py-0.5 rounded bg-black/75 text-[9px] text-[#7BE8F6] font-semibold">
+                          ❄
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Left & Right CapCut Trim Handles when clip is selected */}
+                    {isSelected && (
+                      <>
+                        <div
+                          onPointerDown={(e) => handleTrimPointerDown(e, clip.id, 'left')}
+                          className="absolute left-0 top-0 bottom-0 w-[13px] bg-white flex items-center justify-center cursor-ew-resize z-30"
+                        >
+                          <span className="w-[2px] h-4 rounded-full bg-[#1C1C1C]" />
                         </div>
-                      );
-                    })}
+                        <div
+                          onPointerDown={(e) => handleTrimPointerDown(e, clip.id, 'right')}
+                          className="absolute right-0 top-0 bottom-0 w-[13px] bg-white flex items-center justify-center cursor-ew-resize z-30"
+                        >
+                          <span className="w-[2px] h-4 rounded-full bg-[#1C1C1C]" />
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {/* Speed badge if speed != 1x */}
-                  {clip.speed !== 1 && (
-                    <span className="absolute bottom-1 left-1.5 px-1 py-0.5 rounded bg-black/70 text-[9px] text-[#00CAE0] font-semibold tabular-nums">
-                      {clip.speed}x
-                    </span>
-                  )}
-
-                  {/* Left & Right CapCut Trim Handles when clip is selected */}
-                  {isSelected && (
-                    <>
-                      <div
-                        onPointerDown={(e) => handleTrimPointerDown(e, clip.id, 'left')}
-                        className="absolute left-0 top-0 bottom-0 w-[13px] bg-white flex items-center justify-center cursor-ew-resize z-30"
-                      >
-                        <span className="w-[2px] h-4 rounded-full bg-[#1C1C1C]" />
-                      </div>
-                      <div
-                        onPointerDown={(e) => handleTrimPointerDown(e, clip.id, 'right')}
-                        className="absolute right-0 top-0 bottom-0 w-[13px] bg-white flex items-center justify-center cursor-ew-resize z-30"
-                      >
-                        <span className="w-[2px] h-4 rounded-full bg-[#1C1C1C]" />
-                      </div>
-                    </>
+                  {/* CapCut Transition Junction Pill between adjacent clips */}
+                  {clipIdx < state.clips.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenTransition(clip.id);
+                      }}
+                      title="انتقال بين المقاطع"
+                      aria-label={`إضافة أو تعديل الانتقال بعد المقطع ${clipIdx + 1}`}
+                      className={`absolute -right-[11px] top-1/2 -translate-y-1/2 z-30 w-[22px] h-[22px] rounded-[6px] border text-[11px] font-bold flex items-center justify-center shadow-md transition-transform active:scale-90 cursor-pointer ${
+                        hasActiveTransition
+                          ? 'bg-[#00CAE0] border-[#09181C] text-[#09181C]'
+                          : 'bg-[#F0F0F0] border-[#141414] text-[#1C1C1C] hover:bg-white'
+                      }`}
+                    >
+                      ⇄
+                    </button>
                   )}
                 </div>
               );

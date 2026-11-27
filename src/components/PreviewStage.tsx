@@ -5,6 +5,7 @@ import {
   MediaElementCache,
   renderCompositeFrame,
 } from '../utils/demoRenderer';
+import { snapCoordinate } from '../utils/easing';
 import { clamp, formatTimecode } from '../utils/time';
 import { CloseIcon, PauseOutlineIcon, PlayOutlineIcon } from './icons/CapCutIcons';
 
@@ -50,6 +51,7 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
     kind: 'text' | 'sticker';
     id: string;
   } | null>(null);
+  const [snapGuides, setSnapGuides] = useState<{ x: boolean; y: boolean }>({ x: false, y: false });
   const [mediaTick, setMediaTick] = useState(0);
 
   const dims = getAspectDimensions(state.aspectRatio);
@@ -127,17 +129,21 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging || !boxRef.current) return;
     const rect = boxRef.current.getBoundingClientRect();
-    const x = clamp(((e.clientX - rect.left) / rect.width) * 100, 6, 94);
-    const y = clamp(((e.clientY - rect.top) / rect.height) * 100, 8, 92);
+    const rawX = clamp(((e.clientX - rect.left) / rect.width) * 100, 6, 94);
+    const rawY = clamp(((e.clientY - rect.top) / rect.height) * 100, 8, 92);
+    const sx = snapCoordinate(rawX, 50, 2);
+    const sy = snapCoordinate(rawY, 50, 2);
+    setSnapGuides({ x: sx.snapped, y: sy.snapped });
     if (dragging.kind === 'text') {
-      onMoveText(dragging.id, x, y);
+      onMoveText(dragging.id, sx.value, sy.value);
     } else {
-      onMoveSticker(dragging.id, x, y);
+      onMoveSticker(dragging.id, sx.value, sy.value);
     }
   };
 
   const handlePointerUp = () => {
     if (dragging) setDragging(null);
+    if (snapGuides.x || snapGuides.y) setSnapGuides({ x: false, y: false });
   };
 
   // Compute CSS aspect ratio style
@@ -163,6 +169,20 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
             height={dims.height}
             className="w-full h-full object-contain block"
           />
+
+          {/* Magnetic Center Snap Guides (shown only while dragging near 50% center) */}
+          {dragging && snapGuides.x && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1px] bg-[#00CAE0]/90 shadow-[0_0_6px_#00CAE0]"
+            />
+          )}
+          {dragging && snapGuides.y && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[1px] bg-[#00CAE0]/90 shadow-[0_0_6px_#00CAE0]"
+            />
+          )}
 
           {/* Interactive hitboxes for active Text & Sticker layers */}
           {activeTexts.map((txt) => {
