@@ -17,6 +17,7 @@ import {
   computeLayerMotion,
   computeTransitionWindow,
 } from './easing';
+import { ActorRenderOptions, renderSceneActors } from './actorRenderer';
 
 export interface ActiveClipInfo {
   clip: VideoClip;
@@ -625,6 +626,7 @@ export function renderCompositeFrame(
   state: ProjectState,
   currentTime: number,
   mediaCache: MediaElementCache,
+  actorOptions?: ActorRenderOptions,
 ) {
   ctx.save();
   ctx.clearRect(0, 0, w, h);
@@ -709,6 +711,11 @@ export function renderCompositeFrame(
     vg.addColorStop(1, `rgba(0,0,0,${v * 0.85})`);
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, w, h);
+  }
+
+  // 4.5. Interactive Studio Scene Actors (cars & characters with timed motion paths)
+  if (state.sceneActors && state.sceneActors.length > 0) {
+    renderSceneActors(ctx, w, h, state.sceneActors, currentTime, actorOptions);
   }
 
   // 5. Overlays (PIP)

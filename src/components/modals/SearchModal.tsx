@@ -15,6 +15,7 @@ const ITEMS: Array<{
   action: 'tool' | 'media' | 'export';
   tool?: Exclude<ActiveTool, null>;
 }> = [
+  { label: 'استوديو المشهد · خزنة السيارات والأشخاص', keywords: 'استوديو خزنة سيارة سيارات اشخاص شخص مشهد حركة تسجيل studio car person', action: 'tool', tool: 'studio' },
   { label: 'الخلفية', keywords: 'خلفية لون تمويه تدرج background', action: 'tool', tool: 'background' },
   { label: 'نسبة العرض إلى الارتفاع', keywords: 'ابعاد مقاس 16:9 9:16 1:1 aspect', action: 'tool', tool: 'aspect' },
   { label: 'ملصقات', keywords: 'ملصق ايموجي sticker', action: 'tool', tool: 'stickers' },

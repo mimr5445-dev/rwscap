@@ -6,6 +6,7 @@ import {
   renderCompositeFrame,
 } from '../utils/demoRenderer';
 import { snapCoordinate } from '../utils/easing';
+import { evaluateActorAtTime } from '../utils/sceneActors';
 import { clamp, formatTimecode } from '../utils/time';
 import { CloseIcon, PauseOutlineIcon, PlayOutlineIcon } from './icons/CapCutIcons';
 
@@ -25,6 +26,17 @@ interface PreviewStageProps {
   onMoveSticker: (id: string, x: number, y: number) => void;
   onDeleteText: (id: string) => void;
   onDeleteSticker: (id: string) => void;
+  // Interactive Scene Studio direct-touch props
+  selectedActorId: string | null;
+  isRecordingMotion: boolean;
+  onSelectActor: (id: string | null) => void;
+  onToggleRecordMotion: () => void;
+  onOpenStudioVault: () => void;
+  onMoveActorAtCurrentTime: (actorId: string, x: number, y: number) => void;
+  onTapSceneDestination: (actorId: string, x: number, y: number) => void;
+  onLiveDragStart: (actorId: string, x: number, y: number) => void;
+  onLiveDragMove: (actorId: string, x: number, y: number) => void;
+  onLiveDragEnd: () => void;
 }
 
 export const PreviewStage: React.FC<PreviewStageProps> = ({
@@ -43,20 +55,55 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
   onMoveSticker,
   onDeleteText,
   onDeleteSticker,
+  selectedActorId,
+  isRecordingMotion,
+  onSelectActor,
+  onToggleRecordMotion,
+  onOpenStudioVault,
+  onMoveActorAtCurrentTime,
+  onTapSceneDestination,
+  onLiveDragStart,
+  onLiveDragMove,
+  onLiveDragEnd,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fullCanvasRef = useRef<HTMLCanvasElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+
   const [dragging, setDragging] = useState<{
-    kind: 'text' | 'sticker';
+    kind: 'text' | 'sticker' | 'actor';
     id: string;
+    startClientX: number;
+    startClientY: number;
+    moved: boolean;
+    liveRecording: boolean;
   } | null>(null);
   const [snapGuides, setSnapGuides] = useState<{ x: boolean; y: boolean }>({ x: false, y: false });
   const [mediaTick, setMediaTick] = useState(0);
+  const [tapRipple, setTapRipple] = useState<{ x: number; y: number; progress: number } | null>(
+    null,
+  );
 
   const dims = getAspectDimensions(state.aspectRatio);
+  const actors = state.sceneActors ?? [];
+  const selectedActor = actors.find((a) => a.id === selectedActorId) || null;
 
-  // Preload uploaded images & sync video elements playback/mute state
+  // Animate tap destination ripple cleanly (~420ms)
+  const triggerTapRipple = (x: number, y: number) => {
+    const started = performance.now();
+    const step = (now: number) => {
+      const p = (now - started) / 420;
+      if (p >= 1) {
+        setTapRipple(null);
+        return;
+      }
+      setTapRipple({ x, y, progress: p });
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  // Preload uploaded & studio scene images & sync video elements playback/mute state
   useEffect(() => {
     for (const clip of state.clips) {
       if (clip.type === 'image' && clip.srcUrl && !mediaCache.images.has(clip.srcUrl)) {
@@ -100,9 +147,9 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
     });
   }, [isPlaying, state.mutedMain, state.clips, mediaCache]);
 
-  // Redraw canvas whenever frame/state updates
+  // Redraw canvas whenever frame/state/actor selection updates
   useEffect(() => {
-    const drawTo = (canvas: HTMLCanvasElement | null) => {
+    const drawTo = (canvas: HTMLCanvasElement | null, showGuides: boolean) => {
       if (!canvas) return;
       if (canvas.width !== dims.width || canvas.height !== dims.height) {
         canvas.width = dims.width;
@@ -110,14 +157,28 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
       }
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      renderCompositeFrame(ctx, dims.width, dims.height, state, currentTime, mediaCache);
+      renderCompositeFrame(ctx, dims.width, dims.height, state, currentTime, mediaCache, {
+        showGuides,
+        selectedActorId,
+        tapRipple,
+      });
     };
 
-    drawTo(canvasRef.current);
+    drawTo(canvasRef.current, true);
     if (fullscreen) {
-      drawTo(fullCanvasRef.current);
+      drawTo(fullCanvasRef.current, false);
     }
-  }, [state, currentTime, dims.width, dims.height, fullscreen, mediaCache, mediaTick]);
+  }, [
+    state,
+    currentTime,
+    dims.width,
+    dims.height,
+    fullscreen,
+    mediaCache,
+    mediaTick,
+    selectedActorId,
+    tapRipple,
+  ]);
 
   const activeTexts = state.textItems.filter(
     (t) => currentTime >= t.startTime && currentTime <= t.startTime + t.duration,
@@ -126,13 +187,100 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
     (s) => currentTime >= s.startTime && currentTime <= s.startTime + s.duration,
   );
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging || !boxRef.current) return;
+  const clientToCanvasPercent = (clientX: number, clientY: number) => {
+    if (!boxRef.current) return null;
     const rect = boxRef.current.getBoundingClientRect();
-    const rawX = clamp(((e.clientX - rect.left) / rect.width) * 100, 6, 94);
-    const rawY = clamp(((e.clientY - rect.top) / rect.height) * 100, 8, 92);
-    const sx = snapCoordinate(rawX, 50, 2);
-    const sy = snapCoordinate(rawY, 50, 2);
+    const x = clamp(((clientX - rect.left) / rect.width) * 100, 4, 96);
+    const y = clamp(((clientY - rect.top) / rect.height) * 100, 8, 95);
+    return { x, y };
+  };
+
+  /** Hit-test visible studio actors (closest within touch radius wins) */
+  const hitTestActor = (xPct: number, yPct: number): string | null => {
+    let bestId: string | null = null;
+    let bestDist = 9.5; // generous touch radius in %
+    for (const actor of actors) {
+      const pose = evaluateActorAtTime(actor, currentTime);
+      if (!pose.visible) continue;
+      const dist = Math.hypot(pose.x - xPct, pose.y - yPct);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestId = actor.id;
+      }
+    }
+    return bestId;
+  };
+
+  const handleCanvasPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Ignore clicks on floating HUD buttons
+    if ((e.target as HTMLElement).closest('button')) return;
+    const pos = clientToCanvasPercent(e.clientX, e.clientY);
+    if (!pos) return;
+
+    const hitActorId = hitTestActor(pos.x, pos.y);
+    if (hitActorId) {
+      e.stopPropagation();
+      onSelectLayer(null);
+      onSelectActor(hitActorId);
+      (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+      setDragging({
+        kind: 'actor',
+        id: hitActorId,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        moved: false,
+        liveRecording: isRecordingMotion,
+      });
+      if (isRecordingMotion) {
+        onLiveDragStart(hitActorId, pos.x, pos.y);
+      }
+      return;
+    }
+
+    // Tapping an empty spot on the scene while an actor is selected directs that actor there!
+    if (selectedActorId) {
+      e.stopPropagation();
+      onSelectLayer(null);
+      if (isRecordingMotion) {
+        // In live record mode, touching anywhere starts live-guiding the selected actor from there
+        (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+        setDragging({
+          kind: 'actor',
+          id: selectedActorId,
+          startClientX: e.clientX,
+          startClientY: e.clientY,
+          moved: true,
+          liveRecording: true,
+        });
+        onLiveDragStart(selectedActorId, pos.x, pos.y);
+      } else {
+        triggerTapRipple(pos.x, pos.y);
+        onTapSceneDestination(selectedActorId, pos.x, pos.y);
+      }
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    const pos = clientToCanvasPercent(e.clientX, e.clientY);
+    if (!pos) return;
+
+    const distPx = Math.hypot(e.clientX - dragging.startClientX, e.clientY - dragging.startClientY);
+    if (distPx > 3 && !dragging.moved) {
+      setDragging((prev) => (prev ? { ...prev, moved: true } : null));
+    }
+
+    if (dragging.kind === 'actor') {
+      if (dragging.liveRecording) {
+        onLiveDragMove(dragging.id, pos.x, pos.y);
+      } else if (distPx > 3) {
+        onMoveActorAtCurrentTime(dragging.id, pos.x, pos.y);
+      }
+      return;
+    }
+
+    const sx = snapCoordinate(pos.x, 50, 2);
+    const sy = snapCoordinate(pos.y, 50, 2);
     setSnapGuides({ x: sx.snapped, y: sy.snapped });
     if (dragging.kind === 'text') {
       onMoveText(dragging.id, sx.value, sy.value);
@@ -142,11 +290,13 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
   };
 
   const handlePointerUp = () => {
+    if (dragging?.kind === 'actor' && dragging.liveRecording) {
+      onLiveDragEnd();
+    }
     if (dragging) setDragging(null);
     if (snapGuides.x || snapGuides.y) setSnapGuides({ x: false, y: false });
   };
 
-  // Compute CSS aspect ratio style
   const aspectRatioCss = `${dims.width} / ${dims.height}`;
 
   return (
@@ -158,7 +308,10 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
         <div
           ref={boxRef}
           style={{ aspectRatio: aspectRatioCss }}
-          className="relative max-w-full max-h-full w-full flex items-center justify-center overflow-hidden"
+          className={`relative max-w-full max-h-full flex items-center justify-center overflow-hidden touch-none select-none ${
+            dims.height > dims.width ? 'h-full' : 'w-full'
+          }`}
+          onPointerDown={handleCanvasPointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
@@ -167,17 +320,17 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
             ref={canvasRef}
             width={dims.width}
             height={dims.height}
-            className="w-full h-full object-contain block"
+            className="w-full h-full object-contain block cursor-crosshair"
           />
 
-          {/* Magnetic Center Snap Guides (shown only while dragging near 50% center) */}
-          {dragging && snapGuides.x && (
+          {/* Magnetic Center Snap Guides (shown only while dragging text/stickers near 50% center) */}
+          {dragging && dragging.kind !== 'actor' && snapGuides.x && (
             <div
               aria-hidden="true"
               className="pointer-events-none absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1px] bg-[#00CAE0]/90 shadow-[0_0_6px_#00CAE0]"
             />
           )}
-          {dragging && snapGuides.y && (
+          {dragging && dragging.kind !== 'actor' && snapGuides.y && (
             <div
               aria-hidden="true"
               className="pointer-events-none absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[1px] bg-[#00CAE0]/90 shadow-[0_0_6px_#00CAE0]"
@@ -195,7 +348,15 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
                   e.stopPropagation();
                   (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
                   onSelectLayer(txt.id);
-                  setDragging({ kind: 'text', id: txt.id });
+                  onSelectActor(null);
+                  setDragging({
+                    kind: 'text',
+                    id: txt.id,
+                    startClientX: e.clientX,
+                    startClientY: e.clientY,
+                    moved: false,
+                    liveRecording: false,
+                  });
                 }}
                 onClick={(e) => e.stopPropagation()}
                 className={`absolute -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 min-w-[70px] min-h-[28px] cursor-grab active:cursor-grabbing rounded-md transition-colors ${
@@ -232,7 +393,15 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
                   e.stopPropagation();
                   (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
                   onSelectLayer(st.id);
-                  setDragging({ kind: 'sticker', id: st.id });
+                  onSelectActor(null);
+                  setDragging({
+                    kind: 'sticker',
+                    id: st.id,
+                    startClientX: e.clientX,
+                    startClientY: e.clientY,
+                    moved: false,
+                    liveRecording: false,
+                  });
                 }}
                 onClick={(e) => e.stopPropagation()}
                 className={`absolute -translate-x-1/2 -translate-y-1/2 w-12 h-12 cursor-grab active:cursor-grabbing rounded-lg transition-colors ${
@@ -258,6 +427,39 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
               </div>
             );
           })}
+        </div>
+
+        {/* Compact Floating Studio Director Controls (1-tap Vault + Live Touch Recording) */}
+        <div
+          dir="rtl"
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#141414]/85 backdrop-blur-md border border-white/12 shadow-lg max-w-[95%]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={onOpenStudioVault}
+            className="px-2.5 py-1 rounded-full bg-[#00CAE0] hover:bg-[#19D4E8] text-[#09181C] font-semibold text-[11px] whitespace-nowrap cursor-pointer transition-colors"
+          >
+            خزنة السيارات والأشخاص
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleRecordMotion}
+            className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              isRecordingMotion
+                ? 'bg-[#E53945] text-white animate-pulse'
+                : 'bg-[#26282C] text-[#EAEAEA] hover:bg-[#32353B]'
+            }`}
+          >
+            {isRecordingMotion ? '● جاري التسجيل' : '● تسجيل حركة'}
+          </button>
+
+          {selectedActor && (
+            <span className="hidden sm:inline text-[10.5px] text-[#B8D8DE] truncate max-w-[130px] pl-1">
+              {isRecordingMotion ? `اسحب «${selectedActor.name}»` : `المس لتوجيه «${selectedActor.name}»`}
+            </span>
+          )}
         </div>
       </section>
 

@@ -13,6 +13,7 @@ import {
   OverlayIcon,
   SpeedIcon,
   StickersIcon,
+  StudioSceneIcon,
   TextTIcon,
   TrashIcon,
   VolumeOnIcon,
@@ -114,6 +115,12 @@ export const BottomToolbar: React.FC<BottomToolbarProps> = ({
       id: 'edit',
       label: 'تعديل',
       icon: <EditSplitIcon size={21} />,
+    },
+    {
+      id: 'studio',
+      label: 'الاستوديو',
+      icon: <StudioSceneIcon size={22} />,
+      dot: true,
     },
   ];
 

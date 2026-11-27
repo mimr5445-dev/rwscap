@@ -392,3 +392,25 @@ export const ChevronRightIcon: React.FC<IconProps> = ({ className = '', size = 2
     />
   </svg>
 );
+
+export const StudioSceneIcon: React.FC<IconProps> = ({ className = '', size = 22 }) => (
+  <svg width={size} height={size} aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" className={className}>
+    <path
+      d="M3.5 15.5L5.2 11.2C5.6 10.2 6.5 9.5 7.6 9.5H13.4C14.5 9.5 15.4 10.2 15.8 11.2L17.5 15.5"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <rect x="3" y="15" width="15" height="4.2" rx="1.6" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="6.2" cy="19.3" r="1.3" fill="currentColor" />
+    <circle cx="14.8" cy="19.3" r="1.3" fill="currentColor" />
+    <circle cx="19.2" cy="6.2" r="2.1" stroke="currentColor" strokeWidth="1.6" />
+    <path
+      d="M17.2 11.5C17.8 10.4 18.6 9.9 19.6 9.9C20.7 9.9 21.5 10.6 21.5 12V14.5"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);

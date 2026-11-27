@@ -33,6 +33,7 @@ export type LayerAnimationId = 'none' | 'fade' | 'pop' | 'slide-up' | 'typewrite
 
 export type ActiveTool =
   | null
+  | 'studio'
   | 'background'
   | 'aspect'
   | 'stickers'
@@ -48,6 +49,46 @@ export type ActiveTool =
   | 'transform'
   | 'animation'
   | 'transition';
+
+export type ActorKind = 'car' | 'person';
+
+export type CarModelId = 'sedan' | 'sport' | 'pickup' | 'van' | 'police' | 'moto';
+
+export type PersonModelId =
+  | 'traveler'
+  | 'attendant'
+  | 'driver'
+  | 'explorer'
+  | 'photographer'
+  | 'biker';
+
+export interface ActorKeyframe {
+  /** Timeline timestamp in seconds */
+  time: number;
+  /** Horizontal canvas position percentage (0..100) */
+  x: number;
+  /** Vertical canvas position percentage (0..100) */
+  y: number;
+  /** Optional short Arabic label for the action log */
+  actionLabel?: string;
+}
+
+export interface SceneActor {
+  id: string;
+  kind: ActorKind;
+  modelId: CarModelId | PersonModelId;
+  name: string;
+  primaryColor: string;
+  accentColor: string;
+  /** Visual scale multiplier (0.6..1.8) */
+  scale: number;
+  /** Auto-travel speed in canvas-% per second when using tap-to-move */
+  speed: number;
+  /** Timeline timestamp when this actor enters the scene */
+  appearTime: number;
+  /** Chronologically sorted timed keyframes recording all movements */
+  keyframes: ActorKeyframe[];
+}
 
 export interface ClipTransform {
   rotation: number; // 0, 90, 180, 270
@@ -182,6 +223,7 @@ export interface ProjectState {
   textItems: TextItem[];
   stickers: StickerItem[];
   overlays: OverlayItem[];
+  sceneActors?: SceneActor[];
   mutedMain: boolean;
   coverTime: number;
   customCoverUrl?: string;
