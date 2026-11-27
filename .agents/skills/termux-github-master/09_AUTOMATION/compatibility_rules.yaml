@@ -1,0 +1,48 @@
+# قاعدة توافق أولية
+# الهدف: مساعدة النموذج على الاستدلال، لا تحديد التوافق نهائياً.
+# كل قاعدة تحتاج اختباراً على الجهاز قبل اعتمادها.
+
+rules:
+  - id: PY-REQ
+    if_file: requirements.txt
+    project_type: python
+    note: "يحتاج فحص الحزم التي تحتاج ترجمة من المصدر (مثل numpy وpillow أحياناً)."
+    status: theoretical
+
+  - id: PY-PYPROJECT
+    if_file: pyproject.toml
+    project_type: python
+    note: "قد يحتاج أدوات بناء. افحص قسم build-system."
+    status: theoretical
+
+  - id: NODE-PKG
+    if_file: package.json
+    project_type: nodejs
+    note: "لا يثبت التوافق. افحص السكربتات والاعتماديات وأي أدوات أصلية."
+    status: untested
+
+  - id: DOCKER
+    if_file: Dockerfile
+    project_type: docker
+    compatibility: incompatible_by_default
+    note: "Docker غير متاح عادةً داخل Termux. يُصنف D ما لم يوجد بديل."
+    status: theoretical
+
+  - id: ANDROID-MANIFEST
+    if_file: AndroidManifest.xml
+    project_type: android
+    note: "مشروع Android يحتاج أدوات بناء Android. Termux ليس بديلاً كاملاً."
+    status: theoretical
+
+  - id: STATIC-HTML
+    if_file: index.html
+    project_type: static-web
+    compatibility: likely_compatible
+    note: "يُشغَّل بخادم محلي بسيط. ليس دليلاً على عدم وجود بناء أو اعتماديات."
+    status: theoretical
+
+  - id: NATIVE-BUILD
+    if_file: [CMakeLists.txt, Cargo.toml, go.mod, pom.xml, build.gradle]
+    project_type: native_or_compiled
+    note: "يحتاج مترجمات وأدوات بناء. الإصدار والمعمارية يُفحصان أولاً."
+    status: theoretical

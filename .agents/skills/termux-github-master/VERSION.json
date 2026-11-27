@@ -1,0 +1,9 @@
+{
+  "name": "termux-github-learning",
+  "version": "1.0-pilot",
+  "status": "structure and core protocols built; device testing pending",
+  "target_device": "Samsung Galaxy Note 20 Ultra 5G (SM-N986U)",
+  "target_environment": "Android + Termux (bash)",
+  "primary_language": "ar",
+  "release_gate": "90/100 on 08_PRACTICAL_LAB/TEST_CASES.md with zero critical failures"
+}

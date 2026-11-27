@@ -1,0 +1,1183 @@
+{
+  "schema_version": "1.0.0",
+  "project": "rwscap",
+  "updated_at": "2026-11-27",
+  "source_drive_folder": {
+    "name": "03_Skills_and_Agent_Configs",
+    "id": "1OJ3k5TDO0jSWIb7YD4YTmoxGzdCR1UGs",
+    "collections": {
+      "skills": {
+        "id": "1tFG0snIufFaLgIejB9BzfPoKYA4M8RZB",
+        "items": 108
+      },
+      "skills_2": {
+        "id": "1bPVwTKIXRkn-lZubVnd4ZfORBT0uk3yG",
+        "items": 100
+      },
+      "repo_forensic_zip": {
+        "id": "19iIkmS1XMf7WLef6geF0ATT26FSFMSJB"
+      }
+    }
+  },
+  "totals": {
+    "installed_skills": 119,
+    "installed_rules": 12,
+    "packs": {
+      "context-engineering-kit": 68,
+      "repository-forensic-reader": 1,
+      "skills-2-curated": 17,
+      "superpowers": 15,
+      "termux-github-master": 1,
+      "ui-skills": 10,
+      "ui-ux-pro-max": 7
+    },
+    "domains": {
+      "planning_workflow": 27,
+      "docs_memory_meta": 23,
+      "debugging_kaizen": 9,
+      "git_devops": 15,
+      "review_security_verify": 13,
+      "ui_design": 17,
+      "testing_qa": 9,
+      "accessibility_seo": 3,
+      "motion_video": 3
+    }
+  },
+  "task_routes": {
+    "new_feature_or_planning": [
+      "superpowers/brainstorming",
+      "superpowers/writing-plans",
+      "skills-2-curated/project-engineering",
+      "context-engineering-kit/plan-task",
+      "context-engineering-kit/tree-of-thoughts"
+    ],
+    "ui_design_and_tokens": [
+      "ui-ux-pro-max/ui-ux-pro-max",
+      "ui-ux-pro-max/design-system",
+      "ui-skills/create-design-md",
+      "ui-skills/baseline-ui",
+      "ui-skills/improve-ui",
+      "skills-2-curated/frontend-design",
+      "skills-2-curated/ui-design-system"
+    ],
+    "accessibility_and_metadata": [
+      "ui-skills/fixing-accessibility",
+      "skills-2-curated/a11y-audit",
+      "ui-skills/fixing-metadata"
+    ],
+    "video_canvas_and_motion": [
+      "ui-skills/fixing-motion-performance",
+      "skills-2-curated/remotion-motion-graphics",
+      "skills-2-curated/remotion-motion-factory"
+    ],
+    "implementation_and_tdd": [
+      "superpowers/test-driven-development",
+      "superpowers/executing-plans",
+      "context-engineering-kit/write-tests",
+      "context-engineering-kit/test-coverage",
+      "skills-2-curated/senior-qa",
+      "skills-2-curated/webapp-testing"
+    ],
+    "debugging_and_kaizen": [
+      "superpowers/systematic-debugging",
+      "context-engineering-kit/root-cause-tracing",
+      "context-engineering-kit/why",
+      "context-engineering-kit/kaizen",
+      "skills-2-curated/smart-error-ledger"
+    ],
+    "architecture_security_and_review": [
+      "skills-2-curated/senior-architect",
+      "skills-2-curated/senior-security",
+      "skills-2-curated/code-reviewer",
+      "superpowers/requesting-code-review",
+      "context-engineering-kit/review-local-changes",
+      "superpowers/verification-before-completion"
+    ],
+    "docs_memory_git_and_release": [
+      "skills-2-curated/readme-polish",
+      "context-engineering-kit/update-docs",
+      "context-engineering-kit/write-concisely",
+      "skills-2-curated/agent-memory",
+      "skills-2-curated/memory-engineering",
+      "skills-2-curated/commit-craft",
+      "context-engineering-kit/commit",
+      "context-engineering-kit/create-pr",
+      "superpowers/finishing-a-development-branch",
+      "termux-github-master/termux-github-master",
+      "repository-forensic-reader/repository-forensic-reader"
+    ]
+  },
+  "skills": [
+    {
+      "id": "context-engineering-kit/actualize",
+      "pack": "context-engineering-kit",
+      "slug": "actualize",
+      "name": "actualize",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/actualize/SKILL.md",
+      "description": "Reconcile the project's FPF state with recent repository changes"
+    },
+    {
+      "id": "context-engineering-kit/add-task",
+      "pack": "context-engineering-kit",
+      "slug": "add-task",
+      "name": "add-task",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/add-task/SKILL.md",
+      "description": "creates draft task file in .specs/tasks/draft/ with original user intent"
+    },
+    {
+      "id": "context-engineering-kit/agent-evaluation",
+      "pack": "context-engineering-kit",
+      "slug": "agent-evaluation",
+      "name": "agent-evaluation",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/agent-evaluation/SKILL.md",
+      "description": "Evaluate and improve Claude Code commands, skills, and agents. Use when testing prompt effectiveness, validating context engineering choices, or measuring improvement quality."
+    },
+    {
+      "id": "context-engineering-kit/analyse",
+      "pack": "context-engineering-kit",
+      "slug": "analyse",
+      "name": "analyse",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/context-engineering-kit/analyse/SKILL.md",
+      "description": "Auto-selects best Kaizen method (Gemba Walk, Value Stream, or Muda) for target"
+    },
+    {
+      "id": "context-engineering-kit/analyse-problem",
+      "pack": "context-engineering-kit",
+      "slug": "analyse-problem",
+      "name": "analyse-problem",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/context-engineering-kit/analyse-problem/SKILL.md",
+      "description": "Comprehensive A3 one-page problem analysis with root cause and action plan"
+    },
+    {
+      "id": "context-engineering-kit/analyze-issue",
+      "pack": "context-engineering-kit",
+      "slug": "analyze-issue",
+      "name": "analyze-issue",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/analyze-issue/SKILL.md",
+      "description": "Analyze a GitHub issue and create a detailed technical specification"
+    },
+    {
+      "id": "context-engineering-kit/apply-anthropic-skill-best-practices",
+      "pack": "context-engineering-kit",
+      "slug": "apply-anthropic-skill-best-practices",
+      "name": "apply-anthropic-skill-best-practices",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/apply-anthropic-skill-best-practices/SKILL.md",
+      "description": "Comprehensive guide for skill development based on Anthropic's official best practices - use for complex skills requiring detailed structure"
+    },
+    {
+      "id": "context-engineering-kit/attach-review-to-pr",
+      "pack": "context-engineering-kit",
+      "slug": "attach-review-to-pr",
+      "name": "attach-review-to-pr",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/context-engineering-kit/attach-review-to-pr/SKILL.md",
+      "description": "Add line-specific review comments to pull requests using GitHub CLI API"
+    },
+    {
+      "id": "context-engineering-kit/brainstorm",
+      "pack": "context-engineering-kit",
+      "slug": "brainstorm",
+      "name": "brainstorm",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/brainstorm/SKILL.md",
+      "description": "Use when creating or developing, before writing code or implementation plans - refines rough ideas into fully-formed designs through collaborative questioning, alternative exploration, and incremental validation. Don't u"
+    },
+    {
+      "id": "context-engineering-kit/build-mcp",
+      "pack": "context-engineering-kit",
+      "slug": "build-mcp",
+      "name": "build-mcp",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/build-mcp/SKILL.md",
+      "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, "
+    },
+    {
+      "id": "context-engineering-kit/cause-and-effect",
+      "pack": "context-engineering-kit",
+      "slug": "cause-and-effect",
+      "name": "cause-and-effect",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/context-engineering-kit/cause-and-effect/SKILL.md",
+      "description": "Systematic Fishbone analysis exploring problem causes across six categories"
+    },
+    {
+      "id": "context-engineering-kit/commit",
+      "pack": "context-engineering-kit",
+      "slug": "commit",
+      "name": "commit",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/commit/SKILL.md",
+      "description": "Create well-formatted commits with conventional commit messages and emoji"
+    },
+    {
+      "id": "context-engineering-kit/context-engineering",
+      "pack": "context-engineering-kit",
+      "slug": "context-engineering",
+      "name": "context-engineering",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/context-engineering/SKILL.md",
+      "description": "Understand the components, mechanics, and constraints of context in agent systems. Use when writing, editing, or optimizing commands, skills, or sub-agents prompts."
+    },
+    {
+      "id": "context-engineering-kit/create-agent",
+      "pack": "context-engineering-kit",
+      "slug": "create-agent",
+      "name": "create-agent",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/create-agent/SKILL.md",
+      "description": "Comprehensive guide for creating Claude Code agents with proper structure, triggering conditions, system prompts, and validation - combines official Anthropic best practices with proven patterns"
+    },
+    {
+      "id": "context-engineering-kit/create-command",
+      "pack": "context-engineering-kit",
+      "slug": "create-command",
+      "name": "create-command",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/create-command/SKILL.md",
+      "description": "Interactive assistant for creating new Claude commands with proper structure, patterns, and MCP tool integration"
+    },
+    {
+      "id": "context-engineering-kit/create-hook",
+      "pack": "context-engineering-kit",
+      "slug": "create-hook",
+      "name": "create-hook",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/create-hook/SKILL.md",
+      "description": "Create and configure git hooks with intelligent project analysis, suggestions, and automated testing"
+    },
+    {
+      "id": "context-engineering-kit/create-ideas",
+      "pack": "context-engineering-kit",
+      "slug": "create-ideas",
+      "name": "create-ideas",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/create-ideas/SKILL.md",
+      "description": "Generate ideas in one shot using creative sampling"
+    },
+    {
+      "id": "context-engineering-kit/create-pr",
+      "pack": "context-engineering-kit",
+      "slug": "create-pr",
+      "name": "create-pr",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/create-pr/SKILL.md",
+      "description": "Create pull requests using GitHub CLI with proper templates and formatting"
+    },
+    {
+      "id": "context-engineering-kit/create-rule",
+      "pack": "context-engineering-kit",
+      "slug": "create-rule",
+      "name": "create-rule",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/create-rule/SKILL.md",
+      "description": "Use when found gap or repetative issue, that produced by you or implemenataion agent. Esentially use it each time when you say \"You absolutly right, I should have done it differently.\" -> need create rule for this issue "
+    },
+    {
+      "id": "context-engineering-kit/create-skill",
+      "pack": "context-engineering-kit",
+      "slug": "create-skill",
+      "name": "create-skill",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/create-skill/SKILL.md",
+      "description": "Guide for creating effective skills. This command should be used when users want to create a new skill (or update an existing skill) that extends Claude's capabilities with specialized knowledge, workflows, or tool integ"
+    },
+    {
+      "id": "context-engineering-kit/create-workflow-command",
+      "pack": "context-engineering-kit",
+      "slug": "create-workflow-command",
+      "name": "create-workflow-command",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/create-workflow-command/SKILL.md",
+      "description": "Create a workflow command that orchestrates multi-step execution through sub-agents with file-based task prompts"
+    },
+    {
+      "id": "context-engineering-kit/critique",
+      "pack": "context-engineering-kit",
+      "slug": "critique",
+      "name": "critique",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/context-engineering-kit/critique/SKILL.md",
+      "description": "Comprehensive multi-perspective review using specialized judges with debate and consensus building"
+    },
+    {
+      "id": "context-engineering-kit/decay",
+      "pack": "context-engineering-kit",
+      "slug": "decay",
+      "name": "decay",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/decay/SKILL.md",
+      "description": "Manage evidence freshness by identifying stale decisions and providing governance actions"
+    },
+    {
+      "id": "context-engineering-kit/design-testing-strategy",
+      "pack": "context-engineering-kit",
+      "slug": "design-testing-strategy",
+      "name": "design-testing-strategy",
+      "domain": "ui_design",
+      "path": ".agents/skills/context-engineering-kit/design-testing-strategy/SKILL.md",
+      "description": "Use before writing any type of tests. Distills 14 industry sources into deterministic decision gates, schemas, and worked test examples."
+    },
+    {
+      "id": "context-engineering-kit/do-and-judge",
+      "pack": "context-engineering-kit",
+      "slug": "do-and-judge",
+      "name": "do-and-judge",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/do-and-judge/SKILL.md",
+      "description": "Execute a task with sub-agent implementation and LLM-as-a-judge verification with automatic retry loop"
+    },
+    {
+      "id": "context-engineering-kit/do-competitively",
+      "pack": "context-engineering-kit",
+      "slug": "do-competitively",
+      "name": "do-competitively",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/do-competitively/SKILL.md",
+      "description": "Execute tasks through competitive multi-agent generation, meta-judge evaluation specification, multi-judge evaluation, and evidence-based synthesis"
+    },
+    {
+      "id": "context-engineering-kit/do-in-parallel",
+      "pack": "context-engineering-kit",
+      "slug": "do-in-parallel",
+      "name": "do-in-parallel",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/do-in-parallel/SKILL.md",
+      "description": "Run independent tasks concurrently across multiple files or targets using parallel sub-agents, with per-task model selection and LLM-as-a-judge verification. Use when tasks do not depend on each other and can run side by"
+    },
+    {
+      "id": "context-engineering-kit/do-in-steps",
+      "pack": "context-engineering-kit",
+      "slug": "do-in-steps",
+      "name": "do-in-steps",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/do-in-steps/SKILL.md",
+      "description": "Execute one complex task as ordered, dependent steps run sequentially, passing context from each step to the next, with per-step LLM-as-a-judge verification. Use when later steps depend on the results of earlier ones."
+    },
+    {
+      "id": "context-engineering-kit/fix-tests",
+      "pack": "context-engineering-kit",
+      "slug": "fix-tests",
+      "name": "fix-tests",
+      "domain": "testing_qa",
+      "path": ".agents/skills/context-engineering-kit/fix-tests/SKILL.md",
+      "description": "Systematically fix all failing tests after business logic changes or refactoring"
+    },
+    {
+      "id": "context-engineering-kit/git-notes",
+      "pack": "context-engineering-kit",
+      "slug": "git-notes",
+      "name": "git-notes",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/git-notes/SKILL.md",
+      "description": "Use when adding metadata to commits without changing history, tracking review status, test results, code quality annotations, or supplementing commit messages post-hoc - provides git notes commands and patterns for attac"
+    },
+    {
+      "id": "context-engineering-kit/git-worktrees",
+      "pack": "context-engineering-kit",
+      "slug": "git-worktrees",
+      "name": "git-worktrees",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/git-worktrees/SKILL.md",
+      "description": "Use when working on multiple branches simultaneously, context switching without stashing, reviewing PRs while developing, testing in isolation, or comparing implementations across branches - provides git worktree command"
+    },
+    {
+      "id": "context-engineering-kit/implement-task",
+      "pack": "context-engineering-kit",
+      "slug": "implement-task",
+      "name": "implement-task",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/implement-task/SKILL.md",
+      "description": "Implement a task step by step with automated LLM-as-Judge verification at the end of each phase"
+    },
+    {
+      "id": "context-engineering-kit/judge",
+      "pack": "context-engineering-kit",
+      "slug": "judge",
+      "name": "judge",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/context-engineering-kit/judge/SKILL.md",
+      "description": "Launch a meta-judge then a judge sub-agent to evaluate results produced in the current conversation"
+    },
+    {
+      "id": "context-engineering-kit/judge-with-debate",
+      "pack": "context-engineering-kit",
+      "slug": "judge-with-debate",
+      "name": "judge-with-debate",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/context-engineering-kit/judge-with-debate/SKILL.md",
+      "description": "Evaluate solutions through multi-round debate between independent judges until consensus"
+    },
+    {
+      "id": "context-engineering-kit/kaizen",
+      "pack": "context-engineering-kit",
+      "slug": "kaizen",
+      "name": "kaizen",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/context-engineering-kit/kaizen/SKILL.md",
+      "description": "Use when Code implementation and refactoring, architecturing or designing systems, process and workflow improvements, error handling and validation. Provide tehniquest to avoid over-engineering and apply iterative improv"
+    },
+    {
+      "id": "context-engineering-kit/launch-sub-agent",
+      "pack": "context-engineering-kit",
+      "slug": "launch-sub-agent",
+      "name": "launch-sub-agent",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/launch-sub-agent/SKILL.md",
+      "description": "Launch an intelligent sub-agent with automatic model selection based on task complexity, specialized agent matching, Zero-shot CoT reasoning, and mandatory self-critique verification"
+    },
+    {
+      "id": "context-engineering-kit/load-issues",
+      "pack": "context-engineering-kit",
+      "slug": "load-issues",
+      "name": "load-issues",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/load-issues/SKILL.md",
+      "description": "Load all open issues from GitHub and save them as markdown files"
+    },
+    {
+      "id": "context-engineering-kit/load-pr-comments",
+      "pack": "context-engineering-kit",
+      "slug": "load-pr-comments",
+      "name": "load-pr-comments",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/load-pr-comments/SKILL.md",
+      "description": "Use to load open/unresolved PR review comments then aggregate them as tasks in .specs/comments/*.md for parallel agents to fix."
+    },
+    {
+      "id": "context-engineering-kit/memorize",
+      "pack": "context-engineering-kit",
+      "slug": "memorize",
+      "name": "memorize",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/memorize/SKILL.md",
+      "description": "Curates insights from reflections and critiques into CLAUDE.md using Agentic Context Engineering"
+    },
+    {
+      "id": "context-engineering-kit/multi-agent-patterns",
+      "pack": "context-engineering-kit",
+      "slug": "multi-agent-patterns",
+      "name": "multi-agent-patterns",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/multi-agent-patterns/SKILL.md",
+      "description": "Design multi-agent architectures for complex tasks. Use when single-agent context limits are exceeded, when tasks decompose naturally into subtasks, or when specializing agents improves quality."
+    },
+    {
+      "id": "context-engineering-kit/plan-do-check-act",
+      "pack": "context-engineering-kit",
+      "slug": "plan-do-check-act",
+      "name": "plan-do-check-act",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/context-engineering-kit/plan-do-check-act/SKILL.md",
+      "description": "Iterative PDCA cycle for systematic experimentation and continuous improvement"
+    },
+    {
+      "id": "context-engineering-kit/plan-task",
+      "pack": "context-engineering-kit",
+      "slug": "plan-task",
+      "name": "plan-task",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/plan-task/SKILL.md",
+      "description": "Refine a draft task specification into a fully planned, implementation-ready task with acceptance criteria, architecture, per-step sub-task files and verifiable phases"
+    },
+    {
+      "id": "context-engineering-kit/prompt-engineering",
+      "pack": "context-engineering-kit",
+      "slug": "prompt-engineering",
+      "name": "prompt-engineering",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/prompt-engineering/SKILL.md",
+      "description": "Use this skill when you writing commands, hooks, skills for Agent, or prompts for sub agents or any other LLM interaction, including optimizing prompts, improving LLM outputs, or designing production prompt templates."
+    },
+    {
+      "id": "context-engineering-kit/propose-hypotheses",
+      "pack": "context-engineering-kit",
+      "slug": "propose-hypotheses",
+      "name": "propose-hypotheses",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/propose-hypotheses/SKILL.md",
+      "description": "Execute complete FPF cycle from hypothesis generation to decision"
+    },
+    {
+      "id": "context-engineering-kit/query",
+      "pack": "context-engineering-kit",
+      "slug": "query",
+      "name": "query",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/query/SKILL.md",
+      "description": "Search the FPF knowledge base and display hypothesis details with assurance information"
+    },
+    {
+      "id": "context-engineering-kit/reflect",
+      "pack": "context-engineering-kit",
+      "slug": "reflect",
+      "name": "reflect",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/reflect/SKILL.md",
+      "description": "Reflect on previus response and output, based on Self-refinement framework for iterative improvement with complexity triage and verification"
+    },
+    {
+      "id": "context-engineering-kit/reset",
+      "pack": "context-engineering-kit",
+      "slug": "reset",
+      "name": "reset",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/reset/SKILL.md",
+      "description": "Reset the FPF reasoning cycle to start fresh"
+    },
+    {
+      "id": "context-engineering-kit/resolve-fixed-pr-comments",
+      "pack": "context-engineering-kit",
+      "slug": "resolve-fixed-pr-comments",
+      "name": "resolve-fixed-pr-comments",
+      "domain": "git_devops",
+      "path": ".agents/skills/context-engineering-kit/resolve-fixed-pr-comments/SKILL.md",
+      "description": "Verify what PR review comments have been addressed (committed/pushed OR uncommitted local changes) and resolve the threads that are genuinely fixed or no longer relevant."
+    },
+    {
+      "id": "context-engineering-kit/review-local-changes",
+      "pack": "context-engineering-kit",
+      "slug": "review-local-changes",
+      "name": "review-local-changes",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/context-engineering-kit/review-local-changes/SKILL.md",
+      "description": "Review your local uncommitted working-tree changes (git diff plus untracked files) and return actionable improvement suggestions. Use before committing, when nothing has been pushed yet."
+    },
+    {
+      "id": "context-engineering-kit/review-pr",
+      "pack": "context-engineering-kit",
+      "slug": "review-pr",
+      "name": "review-pr",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/context-engineering-kit/review-pr/SKILL.md",
+      "description": "Review an existing GitHub pull request and post inline review comments on its diff. Use when the changes are on an opened PR rather than your local working tree."
+    },
+    {
+      "id": "context-engineering-kit/root-cause-tracing",
+      "pack": "context-engineering-kit",
+      "slug": "root-cause-tracing",
+      "name": "root-cause-tracing",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/context-engineering-kit/root-cause-tracing/SKILL.md",
+      "description": "Use when errors occur deep in execution and you need to trace back to find the original trigger - systematically traces bugs backward through call stack, adding instrumentation when needed, to identify source of invalid "
+    },
+    {
+      "id": "context-engineering-kit/setup-arxiv-mcp",
+      "pack": "context-engineering-kit",
+      "slug": "setup-arxiv-mcp",
+      "name": "setup-arxiv-mcp",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/setup-arxiv-mcp/SKILL.md",
+      "description": "Guide for setup arXiv paper search MCP server using Docker MCP"
+    },
+    {
+      "id": "context-engineering-kit/setup-codemap-cli",
+      "pack": "context-engineering-kit",
+      "slug": "setup-codemap-cli",
+      "name": "setup-codemap-cli",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/setup-codemap-cli/SKILL.md",
+      "description": "Guide for setup Codemap CLI for intelligent codebase visualization and navigation"
+    },
+    {
+      "id": "context-engineering-kit/setup-context7-mcp",
+      "pack": "context-engineering-kit",
+      "slug": "setup-context7-mcp",
+      "name": "setup-context7-mcp",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/setup-context7-mcp/SKILL.md",
+      "description": "Guide for setup Context7 MCP server to load documentation for specific technologies."
+    },
+    {
+      "id": "context-engineering-kit/setup-serena-mcp",
+      "pack": "context-engineering-kit",
+      "slug": "setup-serena-mcp",
+      "name": "setup-serena-mcp",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/setup-serena-mcp/SKILL.md",
+      "description": "Guide for setup Serena MCP server for semantic code retrieval and editing capabilities"
+    },
+    {
+      "id": "context-engineering-kit/status",
+      "pack": "context-engineering-kit",
+      "slug": "status",
+      "name": "status",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/status/SKILL.md",
+      "description": "Display the current state of the FPF knowledge base"
+    },
+    {
+      "id": "context-engineering-kit/subagent-driven-development",
+      "pack": "context-engineering-kit",
+      "slug": "subagent-driven-development",
+      "name": "subagent-driven-development",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/subagent-driven-development/SKILL.md",
+      "description": "Use when executing implementation plans with independent tasks in the current session or facing 3+ independent issues that can be investigated without shared state or dependencies - dispatches fresh subagent for each tas"
+    },
+    {
+      "id": "context-engineering-kit/test-coverage",
+      "pack": "context-engineering-kit",
+      "slug": "test-coverage",
+      "name": "test-coverage",
+      "domain": "testing_qa",
+      "path": ".agents/skills/context-engineering-kit/test-coverage/SKILL.md",
+      "description": "Use after writing tests to assess coverage quality across structural, mutation, requirements, and API/integration dimensions; organized knowledge for choosing and interpreting coverage analyses."
+    },
+    {
+      "id": "context-engineering-kit/test-driven-development",
+      "pack": "context-engineering-kit",
+      "slug": "test-driven-development",
+      "name": "test-driven-development",
+      "domain": "testing_qa",
+      "path": ".agents/skills/context-engineering-kit/test-driven-development/SKILL.md",
+      "description": "Use when implementing any feature or bugfix, before writing implementation code - write the test first, watch it fail, write minimal code to pass; ensures tests actually verify behavior by requiring failure first"
+    },
+    {
+      "id": "context-engineering-kit/test-prompt",
+      "pack": "context-engineering-kit",
+      "slug": "test-prompt",
+      "name": "test-prompt",
+      "domain": "testing_qa",
+      "path": ".agents/skills/context-engineering-kit/test-prompt/SKILL.md",
+      "description": "Use when creating or editing any prompt (commands, hooks, skills, subagent instructions) to verify it produces desired behavior - applies RED-GREEN-REFACTOR cycle to prompt engineering using subagents for isolated testin"
+    },
+    {
+      "id": "context-engineering-kit/test-skill",
+      "pack": "context-engineering-kit",
+      "slug": "test-skill",
+      "name": "test-skill",
+      "domain": "testing_qa",
+      "path": ".agents/skills/context-engineering-kit/test-skill/SKILL.md",
+      "description": "Use when creating or editing skills, before deployment, to verify they work under pressure and resist rationalization - applies RED-GREEN-REFACTOR cycle to process documentation by running baseline without skill, writing"
+    },
+    {
+      "id": "context-engineering-kit/thought-based-reasoning",
+      "pack": "context-engineering-kit",
+      "slug": "thought-based-reasoning",
+      "name": "thought-based-reasoning",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/thought-based-reasoning/SKILL.md",
+      "description": "Use when tackling complex reasoning tasks requiring step-by-step logic, multi-step arithmetic, commonsense reasoning, symbolic manipulation, or problems where simple prompting fails - provides comprehensive guide to Chai"
+    },
+    {
+      "id": "context-engineering-kit/traiage-review",
+      "pack": "context-engineering-kit",
+      "slug": "traiage-review",
+      "name": "traiage-review",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/context-engineering-kit/traiage-review/SKILL.md",
+      "description": "This skill should be used when need prioritize what changed code in repository human must review."
+    },
+    {
+      "id": "context-engineering-kit/tree-of-thoughts",
+      "pack": "context-engineering-kit",
+      "slug": "tree-of-thoughts",
+      "name": "tree-of-thoughts",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/context-engineering-kit/tree-of-thoughts/SKILL.md",
+      "description": "Execute tasks through systematic exploration, pruning, and expansion using Tree of Thoughts methodology with meta-judge evaluation specifications and multi-agent evaluation"
+    },
+    {
+      "id": "context-engineering-kit/update-docs",
+      "pack": "context-engineering-kit",
+      "slug": "update-docs",
+      "name": "update-docs",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/update-docs/SKILL.md",
+      "description": "Update and maintain project documentation for local code changes using multi-agent workflow with tech-writer agents. Covers docs/, READMEs, JSDoc, and API documentation."
+    },
+    {
+      "id": "context-engineering-kit/why",
+      "pack": "context-engineering-kit",
+      "slug": "why",
+      "name": "why",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/context-engineering-kit/why/SKILL.md",
+      "description": "Iterative Five Whys root cause analysis drilling from symptoms to fundamentals"
+    },
+    {
+      "id": "context-engineering-kit/write-concisely",
+      "pack": "context-engineering-kit",
+      "slug": "write-concisely",
+      "name": "write-concisely",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/context-engineering-kit/write-concisely/SKILL.md",
+      "description": "Apply writing rules to any documentation that humans will read. Makes your writing clearer, stronger, and more professional."
+    },
+    {
+      "id": "context-engineering-kit/write-tests",
+      "pack": "context-engineering-kit",
+      "slug": "write-tests",
+      "name": "write-tests",
+      "domain": "testing_qa",
+      "path": ".agents/skills/context-engineering-kit/write-tests/SKILL.md",
+      "description": "Add missing test coverage for your local code changes by generating new test files (covers uncommitted and untracked changes, or the latest commit if everything is committed). Use when you want write tests for new logic "
+    },
+    {
+      "id": "repository-forensic-reader/repository-forensic-reader",
+      "pack": "repository-forensic-reader",
+      "slug": "repository-forensic-reader",
+      "name": "repository-forensic-reader",
+      "domain": "git_devops",
+      "path": ".agents/skills/repository-forensic-reader/SKILL.md",
+      "description": "يفحص المستودع المرتبط أو المشارك تلقائياً، سواء كان مستودع GitHub أو مجلداً في مساحة العمل أو ملفاً مضغوطاً مرفقاً، ثم يوثّق بنيته كاملة ويقرأ الملفات النصية حرفياً ويحلل الوسائط والملفات الثنائية ويربطها بمواضع استخدامه"
+    },
+    {
+      "id": "skills-2-curated/a11y-audit",
+      "pack": "skills-2-curated",
+      "slug": "a11y-audit",
+      "name": "تدقيق الوصولية",
+      "domain": "accessibility_seo",
+      "path": ".agents/skills/skills-2-curated/a11y-audit/SKILL.md",
+      "description": "تدقيق وإصلاح مشاكل إمكانية الوصول وفق WCAG 2.2 المستوى A و AA."
+    },
+    {
+      "id": "skills-2-curated/agent-harness",
+      "pack": "skills-2-curated",
+      "slug": "agent-harness",
+      "name": "جهاز الوكيل",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/skills-2-curated/agent-harness/SKILL.md",
+      "description": "إطار إدارة حلقة تنفيذ الوكيل والتحقق المستقل لكل مهمة."
+    },
+    {
+      "id": "skills-2-curated/agent-memory",
+      "pack": "skills-2-curated",
+      "slug": "agent-memory",
+      "name": "ذاكرة الوكيل",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/skills-2-curated/agent-memory/SKILL.md",
+      "description": "نظام ذاكرة متعدد الطبقات للوكيل بين الجلسات (L0–L3)."
+    },
+    {
+      "id": "skills-2-curated/code-reviewer",
+      "pack": "skills-2-curated",
+      "slug": "code-reviewer",
+      "name": "مراجع الكود",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/skills-2-curated/code-reviewer/SKILL.md",
+      "description": "مراجع كود متخصص لتحليل طلبات السحب وجودة الكود والأمان."
+    },
+    {
+      "id": "skills-2-curated/commit-craft",
+      "pack": "skills-2-curated",
+      "slug": "commit-craft",
+      "name": "صناعة الالتزام",
+      "domain": "git_devops",
+      "path": ".agents/skills/skills-2-curated/commit-craft/SKILL.md",
+      "description": "تخطيط وتقسيم الالتزامات (Git Commits) وفحص الأسرار وجودة الرسائل."
+    },
+    {
+      "id": "skills-2-curated/frontend-design",
+      "pack": "skills-2-curated",
+      "slug": "frontend-design",
+      "name": "تصميم الواجهة الأمامية",
+      "domain": "ui_design",
+      "path": ".agents/skills/skills-2-curated/frontend-design/SKILL.md",
+      "description": "تصميم واجهات عالية الجودة تتجنب الصور النمطية."
+    },
+    {
+      "id": "skills-2-curated/memory-engineering",
+      "pack": "skills-2-curated",
+      "slug": "memory-engineering",
+      "name": "هندسة الذاكرة",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/skills-2-curated/memory-engineering/SKILL.md",
+      "description": "هندسة الذاكرة وسياسات النسيان المتعمد وكثافة المعرفة للوكلاء."
+    },
+    {
+      "id": "skills-2-curated/project-engineering",
+      "pack": "skills-2-curated",
+      "slug": "project-engineering",
+      "name": "هندسة المشروع",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/skills-2-curated/project-engineering/SKILL.md",
+      "description": "إدارة وهندسة المشروع من الفكرة إلى الإطلاق بحلقة تسليم قابلة للتحقق."
+    },
+    {
+      "id": "skills-2-curated/readme-polish",
+      "pack": "skills-2-curated",
+      "slug": "readme-polish",
+      "name": "صقل الملف README",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/skills-2-curated/readme-polish/SKILL.md",
+      "description": "صقل ملفات README محترفة واجتياز اختبار الـ 15 ثانية."
+    },
+    {
+      "id": "skills-2-curated/remotion-motion-factory",
+      "pack": "skills-2-curated",
+      "slug": "remotion-motion-factory",
+      "name": "مصنع الحركة Remotion",
+      "domain": "motion_video",
+      "path": ".agents/skills/skills-2-curated/remotion-motion-factory/SKILL.md",
+      "description": "قواعد هندسة المشاهد المتحركة والتوقيت المعتمدة على الإطارات."
+    },
+    {
+      "id": "skills-2-curated/remotion-motion-graphics",
+      "pack": "skills-2-curated",
+      "slug": "remotion-motion-graphics",
+      "name": "جرافيك الحركة Remotion",
+      "domain": "motion_video",
+      "path": ".agents/skills/skills-2-curated/remotion-motion-graphics/SKILL.md",
+      "description": "مبادئ الرسوم المتحركة البرمجية وإطارات الفيديو الموثقة."
+    },
+    {
+      "id": "skills-2-curated/senior-architect",
+      "pack": "skills-2-curated",
+      "slug": "senior-architect",
+      "name": "مهندس معماري أول",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/skills-2-curated/senior-architect/SKILL.md",
+      "description": "تصميم وتحليل البنية المعمارية وتبعيات المشروع والقرارات التقنية."
+    },
+    {
+      "id": "skills-2-curated/senior-qa",
+      "pack": "skills-2-curated",
+      "slug": "senior-qa",
+      "name": "ضمان جودة أولي",
+      "domain": "testing_qa",
+      "path": ".agents/skills/skills-2-curated/senior-qa/SKILL.md",
+      "description": "أتمتة الاختبارات وتحليل التغطية وضمان الجودة لتطبيقات React."
+    },
+    {
+      "id": "skills-2-curated/senior-security",
+      "pack": "skills-2-curated",
+      "slug": "senior-security",
+      "name": "الأمان الأول",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/skills-2-curated/senior-security/SKILL.md",
+      "description": "نمذجة التهديدات STRIDE/DREAD وفحص الأسرار وأمان التطبيق."
+    },
+    {
+      "id": "skills-2-curated/smart-error-ledger",
+      "pack": "skills-2-curated",
+      "slug": "smart-error-ledger",
+      "name": "سجل الأخطاء الذكي",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/skills-2-curated/smart-error-ledger/SKILL.md",
+      "description": "سجل أخطاء يحفظ الأخطاء المؤكدة والدروس المستفادة لمنع تكرارها."
+    },
+    {
+      "id": "skills-2-curated/ui-design-system",
+      "pack": "skills-2-curated",
+      "slug": "ui-design-system",
+      "name": "نظام تصميم الواجهة",
+      "domain": "ui_design",
+      "path": ".agents/skills/skills-2-curated/ui-design-system/SKILL.md",
+      "description": "نظام تصميم واجهة موحد وتوليد الرموز التصميمية (Design Tokens)."
+    },
+    {
+      "id": "skills-2-curated/webapp-testing",
+      "pack": "skills-2-curated",
+      "slug": "webapp-testing",
+      "name": "اختبار تطبيقات الويب",
+      "domain": "testing_qa",
+      "path": ".agents/skills/skills-2-curated/webapp-testing/SKILL.md",
+      "description": "اختبار تطبيقات الويب المحلية والتحقق التفاعلي من DOM."
+    },
+    {
+      "id": "superpowers/brainstorming",
+      "pack": "superpowers",
+      "slug": "brainstorming",
+      "name": "brainstorming",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/superpowers/brainstorming/SKILL.md",
+      "description": "You MUST use this before any creative work - creating features, building components, adding functionality, modifying behavior, or planning anything new, in software or out of it (a talk, a business, a renovation)."
+    },
+    {
+      "id": "superpowers/diagnosing-superpowers",
+      "pack": "superpowers",
+      "slug": "diagnosing-superpowers",
+      "name": "diagnosing-superpowers",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/superpowers/diagnosing-superpowers/SKILL.md",
+      "description": "Use when a superpowers session went wrong and your human partner wants to know why — repeated work, ignored plans, stumbles, poor results, a skill that didn't fire, \"it took too long\", \"why is it so expensive\", \"what is "
+    },
+    {
+      "id": "superpowers/dispatching-parallel-agents",
+      "pack": "superpowers",
+      "slug": "dispatching-parallel-agents",
+      "name": "dispatching-parallel-agents",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/superpowers/dispatching-parallel-agents/SKILL.md",
+      "description": "Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies"
+    },
+    {
+      "id": "superpowers/executing-plans",
+      "pack": "superpowers",
+      "slug": "executing-plans",
+      "name": "executing-plans",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/superpowers/executing-plans/SKILL.md",
+      "description": "Use when executing an implementation plan in the current session as the implementer yourself — your human partner chose inline execution, or no subagent tool is available"
+    },
+    {
+      "id": "superpowers/finishing-a-development-branch",
+      "pack": "superpowers",
+      "slug": "finishing-a-development-branch",
+      "name": "finishing-a-development-branch",
+      "domain": "git_devops",
+      "path": ".agents/skills/superpowers/finishing-a-development-branch/SKILL.md",
+      "description": "Use when implementation is complete, all tests pass, and you need to decide how to integrate the work"
+    },
+    {
+      "id": "superpowers/receiving-code-review",
+      "pack": "superpowers",
+      "slug": "receiving-code-review",
+      "name": "receiving-code-review",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/superpowers/receiving-code-review/SKILL.md",
+      "description": "Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind "
+    },
+    {
+      "id": "superpowers/requesting-code-review",
+      "pack": "superpowers",
+      "slug": "requesting-code-review",
+      "name": "requesting-code-review",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/superpowers/requesting-code-review/SKILL.md",
+      "description": "Use when completing tasks, implementing major features, or before merging to verify work meets requirements"
+    },
+    {
+      "id": "superpowers/subagent-driven-development",
+      "pack": "superpowers",
+      "slug": "subagent-driven-development",
+      "name": "subagent-driven-development",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/superpowers/subagent-driven-development/SKILL.md",
+      "description": "Use when executing implementation plans with independent tasks in the current session"
+    },
+    {
+      "id": "superpowers/systematic-debugging",
+      "pack": "superpowers",
+      "slug": "systematic-debugging",
+      "name": "systematic-debugging",
+      "domain": "debugging_kaizen",
+      "path": ".agents/skills/superpowers/systematic-debugging/SKILL.md",
+      "description": "Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes"
+    },
+    {
+      "id": "superpowers/test-driven-development",
+      "pack": "superpowers",
+      "slug": "test-driven-development",
+      "name": "test-driven-development",
+      "domain": "testing_qa",
+      "path": ".agents/skills/superpowers/test-driven-development/SKILL.md",
+      "description": "Use when implementing any feature or bugfix, before writing implementation code"
+    },
+    {
+      "id": "superpowers/using-git-worktrees",
+      "pack": "superpowers",
+      "slug": "using-git-worktrees",
+      "name": "using-git-worktrees",
+      "domain": "git_devops",
+      "path": ".agents/skills/superpowers/using-git-worktrees/SKILL.md",
+      "description": "Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace exists via native tools or git worktree fallback"
+    },
+    {
+      "id": "superpowers/using-superpowers",
+      "pack": "superpowers",
+      "slug": "using-superpowers",
+      "name": "using-superpowers",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/superpowers/using-superpowers/SKILL.md",
+      "description": "Use when starting any conversation - establishes how to find and use skills, requiring skill invocation before ANY response including clarifying questions"
+    },
+    {
+      "id": "superpowers/verification-before-completion",
+      "pack": "superpowers",
+      "slug": "verification-before-completion",
+      "name": "verification-before-completion",
+      "domain": "review_security_verify",
+      "path": ".agents/skills/superpowers/verification-before-completion/SKILL.md",
+      "description": "Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output before making any success claims; evidence before assertions a"
+    },
+    {
+      "id": "superpowers/writing-plans",
+      "pack": "superpowers",
+      "slug": "writing-plans",
+      "name": "writing-plans",
+      "domain": "planning_workflow",
+      "path": ".agents/skills/superpowers/writing-plans/SKILL.md",
+      "description": "Use when you have a spec or requirements for a multi-step task, before touching code"
+    },
+    {
+      "id": "superpowers/writing-skills",
+      "pack": "superpowers",
+      "slug": "writing-skills",
+      "name": "writing-skills",
+      "domain": "docs_memory_meta",
+      "path": ".agents/skills/superpowers/writing-skills/SKILL.md",
+      "description": "Use when creating new skills, editing existing skills, or verifying skills work before deployment"
+    },
+    {
+      "id": "termux-github-master/termux-github-master",
+      "pack": "termux-github-master",
+      "slug": "termux-github-master",
+      "name": "termux-github-learning",
+      "domain": "git_devops",
+      "path": ".agents/skills/termux-github-master/SKILL.md",
+      "description": "Teaches a complete beginner to run GitHub repositories on an Android phone through Termux, in Arabic, one verified step at a time. Checks compatibility before any install, explains every command and terminal output, logs"
+    },
+    {
+      "id": "ui-skills/baseline-ui",
+      "pack": "ui-skills",
+      "slug": "baseline-ui",
+      "name": "baseline-ui",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-skills/baseline-ui/SKILL.md",
+      "description": "Quickly deslop UI code by fixing spacing, hierarchy, typography, and small layout issues. Use when the interface needs a fast cleanup or polish pass."
+    },
+    {
+      "id": "ui-skills/component-canvas",
+      "pack": "ui-skills",
+      "slug": "component-canvas",
+      "name": "component-canvas",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-skills/component-canvas/SKILL.md",
+      "description": "Build a full-screen, interactive canvas to explore existing UI components and their variants with pan and zoom."
+    },
+    {
+      "id": "ui-skills/create-canvas",
+      "pack": "ui-skills",
+      "slug": "create-canvas",
+      "name": "create-canvas",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-skills/create-canvas/SKILL.md",
+      "description": "Build a freeform canvas to explore, compare, and iterate on anything."
+    },
+    {
+      "id": "ui-skills/create-design-md",
+      "pack": "ui-skills",
+      "slug": "create-design-md",
+      "name": "create-design-md",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-skills/create-design-md/SKILL.md",
+      "description": "Create or update a DESIGN.md from an existing product repository or public website. Use when asked to document an interface's design language, reconstruct its visual system, extract design tokens and guidance from curren"
+    },
+    {
+      "id": "ui-skills/device-frames",
+      "pack": "ui-skills",
+      "slug": "device-frames",
+      "name": "device-frames",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-skills/device-frames/SKILL.md",
+      "description": "Create device-framed screenshots, product images, videos, or live UI mockups. Use when placing an image, recording, webpage, or component inside a phone, foldable, tablet, watch, laptop, monitor, or browser frame, includ"
+    },
+    {
+      "id": "ui-skills/fixing-accessibility",
+      "pack": "ui-skills",
+      "slug": "fixing-accessibility",
+      "name": "fixing-accessibility",
+      "domain": "accessibility_seo",
+      "path": ".agents/skills/ui-skills/fixing-accessibility/SKILL.md",
+      "description": "Audit and fix HTML accessibility issues including ARIA labels, keyboard navigation, focus management, color contrast, and form errors. Use when adding interactive controls, forms, dialogs, or reviewing WCAG compliance."
+    },
+    {
+      "id": "ui-skills/fixing-metadata",
+      "pack": "ui-skills",
+      "slug": "fixing-metadata",
+      "name": "fixing-metadata",
+      "domain": "accessibility_seo",
+      "path": ".agents/skills/ui-skills/fixing-metadata/SKILL.md",
+      "description": "Audit and fix HTML metadata including page titles, meta descriptions, canonical URLs, Open Graph tags, Twitter cards, favicons, JSON-LD structured data, and robots directives. Use when adding SEO metadata, fixing social "
+    },
+    {
+      "id": "ui-skills/fixing-motion-performance",
+      "pack": "ui-skills",
+      "slug": "fixing-motion-performance",
+      "name": "fixing-motion-performance",
+      "domain": "motion_video",
+      "path": ".agents/skills/ui-skills/fixing-motion-performance/SKILL.md",
+      "description": "Audit and fix animation performance issues including layout thrashing, compositor properties, scroll-linked motion, and blur effects. Use when animations stutter, transitions jank, or reviewing CSS/JS animation performan"
+    },
+    {
+      "id": "ui-skills/improve-ui",
+      "pack": "ui-skills",
+      "slug": "improve-ui",
+      "name": "improve-ui",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-skills/improve-ui/SKILL.md",
+      "description": "Audit an existing product surface against its own design evidence, identify verified UI problems, and write self-contained implementation plans for another agent. Strictly read-only on product source. Use when asked to r"
+    },
+    {
+      "id": "ui-skills/ui-skills-root",
+      "pack": "ui-skills",
+      "slug": "ui-skills-root",
+      "name": "ui-skills-root",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-skills/ui-skills-root/SKILL.md",
+      "description": "Use before UI-related work to select the smallest useful UI Skills context through the ui-skills CLI."
+    },
+    {
+      "id": "ui-ux-pro-max/banner-design",
+      "pack": "ui-ux-pro-max",
+      "slug": "banner-design",
+      "name": "banner-design",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-ux-pro-max/banner-design/SKILL.md",
+      "description": "Design banners for social media, ads, website heroes, creative assets, and print. Multiple art direction options with optional generated or supplied visuals. Actions: design, create, generate banner. Platforms: Facebook,"
+    },
+    {
+      "id": "ui-ux-pro-max/brand",
+      "pack": "ui-ux-pro-max",
+      "slug": "brand",
+      "name": "brand",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-ux-pro-max/brand/SKILL.md",
+      "description": "Brand voice, visual identity, messaging frameworks, asset management, brand consistency. Activate for branded content, tone of voice, marketing assets, brand compliance, style guides."
+    },
+    {
+      "id": "ui-ux-pro-max/design",
+      "pack": "ui-ux-pro-max",
+      "slug": "design",
+      "name": "design",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-ux-pro-max/design/SKILL.md",
+      "description": "Comprehensive design skill: brand identity, design tokens, UI styling, logo generation (55 styles, Gemini, Atlas Cloud, MuAPI, or UberLLM AI), corporate identity program (50 deliverables, CIP mockups), HTML presentations"
+    },
+    {
+      "id": "ui-ux-pro-max/design-system",
+      "pack": "ui-ux-pro-max",
+      "slug": "design-system",
+      "name": "design-system",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-ux-pro-max/design-system/SKILL.md",
+      "description": "Token architecture, component specifications, and slide generation. Three-layer tokens (primitive→semantic→component), CSS variables, spacing/typography scales, component specs, strategic slide creation. Use for design t"
+    },
+    {
+      "id": "ui-ux-pro-max/slides",
+      "pack": "ui-ux-pro-max",
+      "slug": "slides",
+      "name": "slides",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-ux-pro-max/slides/SKILL.md",
+      "description": "Create strategic HTML presentations with Chart.js, design tokens, responsive layouts, copywriting formulas, and contextual slide strategies."
+    },
+    {
+      "id": "ui-ux-pro-max/ui-styling",
+      "pack": "ui-ux-pro-max",
+      "slug": "ui-styling",
+      "name": "ui-styling",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-ux-pro-max/ui-styling/SKILL.md",
+      "description": "Create beautiful, accessible user interfaces with shadcn/ui components (built on Radix UI + Tailwind), Tailwind CSS utility-first styling, and canvas-based visual designs. Use when building user interfaces, implementing "
+    },
+    {
+      "id": "ui-ux-pro-max/ui-ux-pro-max",
+      "pack": "ui-ux-pro-max",
+      "slug": "ui-ux-pro-max",
+      "name": "ui-ux-pro-max",
+      "domain": "ui_design",
+      "path": ".agents/skills/ui-ux-pro-max/ui-ux-pro-max/SKILL.md",
+      "description": "UI/UX design intelligence for web, mobile, and desktop. This skill should be used when designing, building, reviewing, or fixing interfaces, including pages, components, design systems, accessibility, interaction, respon"
+    }
+  ]
+}
